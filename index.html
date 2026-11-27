@@ -40,6 +40,7 @@ button:active{scale:.96}
 #status{position:fixed;inset:48% 0 auto;text-align:center;pointer-events:none}
 #wide-scene,#dawn-words,#ripples,#alarm-screen{position:fixed;inset:0;pointer-events:none;opacity:0}
 #wide-scene{z-index:-1;overflow:hidden;background:#0a0a0c}
+#wide-extension{position:absolute;inset:0;width:100%;height:100%}
 #wide-photo,#wide-next{position:absolute;max-width:none;object-fit:cover;transform-origin:50% 70%}
 #birds{position:fixed;left:0;top:0;width:160px;height:44px;opacity:0;pointer-events:none;transform-origin:top left}
 #birds img{position:absolute;width:15px;height:auto;filter:brightness(.55);transform-origin:center}
@@ -109,7 +110,7 @@ button:active{scale:.96}
 <div id="dial" role="slider" tabindex="0" aria-label="Alarm time" aria-valuemin="0" aria-valuemax="1439"><div id="lens" aria-hidden="true"><div id="lens-scene"><img id="lens-current" alt=""><img id="lens-next" alt=""></div></div><div class="lens-glint"></div><div id="wheel-hint" class="visible" aria-hidden="true">Rotate the circle
 to set the time</div><div id="knob"></div></div>
 <div class="actions"><button id="cancel">Cancel</button><button id="done">Done</button></div><div class="home"></div></div></div></main>
-<div id="wide-scene" aria-hidden="true"><img id="wide-photo" alt=""><img id="wide-next" alt=""></div>
+<div id="wide-scene" aria-hidden="true"><img id="wide-photo" alt=""><img id="wide-next" alt=""><canvas id="wide-extension" hidden></canvas></div>
 <div id="dawn-words" aria-hidden="true"><img id="dawn-hour" alt=""><img id="dawn-minute" alt=""></div>
 <div id="birds" aria-hidden="true"></div>
 <div id="ripples" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -415,7 +416,7 @@ function cubicPhase(t,a,b){
  const x=clamp01((t-a)/(b-a));
  return x<.5?4*x**3:1-(-2*x+2)**3/2;
 }
-let scenePhoto;
+let scenePhoto,sceneNext,sceneBlend,sceneSize="";
 function setWakeAssets(value){
  const h=Math.floor(value/60),m=value%60;
  const isDefault=value===alarmTime;
@@ -428,9 +429,47 @@ function setWakeAssets(value){
  el('alarm-next').src=next.src;
  reveal('alarm-next',blend);
  scenePhoto=isDefault?widePhoto:current;
+ sceneNext=next;sceneBlend=blend;sceneSize='';
+ el('wide-extension').hidden=isDefault;
+ for(const id of ['wide-photo','wide-next'])el(id).hidden=!isDefault;
  el('wide-photo').src=scenePhoto.src;
  el('wide-next').src=next.src;
  reveal('wide-next',blend);
+}
+function drawWideExtension(){
+ const size=innerWidth+'×'+innerHeight;
+ if(sceneSize===size)return;
+ sceneSize=size;
+ const canvas=el('wide-extension');
+ const resolution=Math.min(devicePixelRatio||1,2000/Math.max(innerWidth,innerHeight));
+ const width=canvas.width=Math.round(innerWidth*resolution);
+ const height=canvas.height=Math.round(innerHeight*resolution);
+ const ctx=canvas.getContext('2d');
+ const phoneWidth=height*393/852,left=(width-phoneWidth)/2,right=left+phoneWidth;
+ function paint(image,opacity){
+  if(!opacity)return;
+  ctx.globalAlpha=opacity;
+  const iw=image.naturalWidth,ih=image.naturalHeight;
+  const scale=Math.max(phoneWidth/iw,height/ih),sw=phoneWidth/scale,sh=height/scale;
+  const sx=(iw-sw)/2,sy=(ih-sh)/2;
+  // Continue the outer edges into the wings. The original center keeps its exact phone crop.
+  for(const [edge,space,direction,sourceEdge,available] of [
+   [left,left,-1,sx,sx],[right,width-right,1,sx+sw,iw-sx-sw]
+  ]){
+   if(space<=0)continue;
+   const extent=Math.max(2,available);
+   for(let px=0;px<Math.round(space);px++){
+    const u=px/space;
+    const dx=extent*(1-(1-u)**2);
+    const column=Math.max(0,Math.min(iw-1,sourceEdge+direction*dx));
+    ctx.drawImage(image,column,sy,1,sh,Math.round(edge)+(direction<0?-px-1:px),0,1,height);
+   }
+  }
+  ctx.drawImage(image,sx,sy,sw,sh,left,0,phoneWidth,height);
+ }
+ paint(scenePhoto,1);
+ paint(sceneNext,sceneBlend);
+ ctx.globalAlpha=1;
 }
 function paintScenery(t,opening,shake){
  if(!scenePhoto)return;
@@ -449,6 +488,11 @@ function paintScenery(t,opening,shake){
   transform:'translateX('+shake+'px)'
  });
  const breeze=cubicPhase(t,12.2,13.5);
+ if(reelAnchor!==alarmTime&&t>=wideRevealAt){
+  drawWideExtension();
+  el('wide-extension').style.transform='translateX('+shake+'px)';
+  el('wide-extension').style.filter=breeze?'url(#dawn-wind)':'';
+ }
  for(const id of ['wide-photo','wide-next'])el(id).style.filter=breeze?'url(#dawn-wind)':'';
  el('wind-offset').setAttribute('dx',Math.sin(t*1.15)*32);
  el('wind-offset').setAttribute('dy',Math.cos(t*.85)*12);
