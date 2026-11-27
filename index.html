@@ -18,9 +18,9 @@ body{margin:0;background:#0a0a0c;color:white;font-family:-apple-system,BlinkMacS
 #dial{position:absolute;left:55.5px;top:387.168px;width:279px;height:279px;border-radius:50%;touch-action:none;cursor:grab;outline-offset:6px}
 #lens,.lens-glint,#lens-scene{position:absolute;inset:0;border-radius:inherit;pointer-events:none}
 #lens{overflow:hidden}
-#lens-scene{overflow:hidden;mask-image:radial-gradient(circle closest-side,transparent calc(100% - 19px),#000 calc(100% - 3px))}
-#lens-scene img{position:absolute;left:var(--sample-x);top:var(--sample-y);width:var(--sample-w);height:var(--sample-h);object-fit:cover;transform:scale(1.06);transform-origin:calc(139.5px - var(--sample-x)) calc(139.5px - var(--sample-y))}
-#lens.native{backdrop-filter:url(#liquid-glass-lens);mask-image:radial-gradient(circle closest-side,transparent calc(100% - 19px),#000 calc(100% - 17px))}
+#lens-scene{overflow:hidden;mask-image:radial-gradient(circle closest-side,transparent calc(100% - 16px),#000 calc(100% - 2px))}
+#lens-scene img{position:absolute;left:var(--sample-x);top:var(--sample-y);width:var(--sample-w);height:var(--sample-h);object-fit:cover;transform:scale(1.025);transform-origin:calc(139.5px - var(--sample-x)) calc(139.5px - var(--sample-y))}
+#lens.native{backdrop-filter:url(#liquid-glass-lens);mask-image:radial-gradient(circle closest-side,transparent calc(100% - 16px),#000 calc(100% - 9px))}
 #lens.native #lens-scene{display:none}
 .lens-glint{background:rgba(0,0,0,.10);border:1.06px solid rgba(255,255,255,.10);box-shadow:inset 3px 3px 8px #ffffff73,inset -2px -2px 6px #ffffff33}
 .lens-glint::after{content:"";position:absolute;inset:0;border-radius:inherit;background:conic-gradient(from -45deg,#dfedef80,#b8f5ff38,transparent,#ffa8ea32,#f8deaf48,transparent,#dfedef80);mask-image:radial-gradient(circle closest-side,transparent 97.8%,#000 99.6%,transparent 100%)}
@@ -37,7 +37,7 @@ button:active{scale:.96}
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <filter id="liquid-glass-lens" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
 <feImage id="lens-map" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="field"/>
-<feDisplacementMap in="SourceGraphic" in2="field" scale="44.4" xChannelSelector="R" yChannelSelector="G"/>
+<feDisplacementMap in="SourceGraphic" in2="field" scale="14" xChannelSelector="R" yChannelSelector="G"/>
 </filter></defs></svg>
 <main id="phone" aria-label="Set alarm"><div id="camera"><div id="land"><img id="bg-current" alt=""><img id="bg-next" alt=""></div>
 <div id="ui"><div class="reading" id="hour"><div class="word"></div><span class="unit">hours</span></div><div class="reading" id="minute"><div class="word"></div><span class="unit">minutes</span></div>
@@ -63,19 +63,26 @@ alarmAudio.addEventListener('error',()=>{melodyFailed=true});
 
 function prepareLens(){
  const canvas=document.createElement('canvas');
- const size=279,center=(size-1)/2;
+ const size=279,rim=15,padding=12;
+ const field=document.createElement('canvas');
+ const paddedSize=size+2*padding,center=(paddedSize-1)/2,radius=(size-1)/2;
+ field.width=field.height=paddedSize;
  canvas.width=canvas.height=size;
- const ctx=canvas.getContext('2d'),map=ctx.createImageData(size,size);
- for(let y=0;y<size;y++)for(let x=0;x<size;x++){
-  const dx=(x-center)/center,dy=(y-center)/center,r=Math.hypot(dx,dy);
-  const displacement=125*ease((r*center-(center-19))/19);
-  const i=(y*size+x)*4;
+ const fieldCtx=field.getContext('2d');
+ const map=fieldCtx.createImageData(paddedSize,paddedSize);
+ for(let y=0;y<paddedSize;y++)for(let x=0;x<paddedSize;x++){
+  const dx=(x-center)/radius,dy=(y-center)/radius,r=Math.hypot(dx,dy);
+  const displacement=125*ease((r*radius-(radius-rim))/rim);
+  const i=(y*paddedSize+x)*4;
   map.data[i]=Math.round(128-dx/Math.max(1,r)*displacement);
   map.data[i+1]=Math.round(128-dy/Math.max(1,r)*displacement);
   map.data[i+2]=128;
   map.data[i+3]=255;
  }
- ctx.putImageData(map,0,0);
+ fieldCtx.putImageData(map,0,0);
+ const ctx=canvas.getContext('2d');
+ ctx.filter='blur(3px)';
+ ctx.drawImage(field,-padding,-padding);
  el('lens-map').setAttribute('href',canvas.toDataURL());
  // Chromium supports SVG URL backdrop filters; use the layered lens elsewhere.
  if(/Chrome\//.test(navigator.userAgent)&&CSS.supports('backdrop-filter','url(#liquid-glass-lens)')){
