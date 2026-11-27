@@ -47,6 +47,7 @@ button:active{scale:.96}
 #alarm-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
 .phone-top{position:absolute;left:0;top:0;width:393px;height:59px;pointer-events:none}
 #alarm-card{background:transparent}
+#phone::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 2px #ffffff33;pointer-events:none;opacity:var(--outline,1)}
 #alarm-actions{position:absolute;left:16px;right:16px;bottom:35px;display:grid;gap:11px}
 #snooze,#alarm-track{width:100%;height:98px;border:0;border-radius:49px}
 #snooze{background:transparent;box-shadow:none;backdrop-filter:none}
@@ -78,7 +79,7 @@ button:active{scale:.96}
 <div id="birds" aria-hidden="true"></div>
 <div id="ripples" aria-hidden="true"><span></span><span></span><span></span></div>
 <div id="alarm-screen" aria-hidden="true" inert><div id="alarm-card">
-<img id="alarm-photo" src="Экран будилника.png" alt="Alarm, 06:30"><img class="phone-top" src="Top Bar 6_30.png" alt="">
+<img id="alarm-photo" src="meadow-backgrounds/alarm-screen.png" alt="Alarm, six thirty">
 <div id="alarm-actions"><button id="snooze" aria-label="Snooze"></button><div id="alarm-track" role="button" tabindex="0" aria-label="Slide to stop alarm"><span aria-hidden="true">Slide to Stop</span><div id="alarm-thumb"></div></div></div></div></div>
 <nav id="reel-controls" aria-label="Showreel controls"><button id="play" aria-label="Play" title="Play"></button><button id="restart" aria-label="Restart" title="Restart"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11a8 8 0 1 1 2 7M4 4v7h7"/></svg></button><button id="mute" aria-label="Mute" title="Mute" aria-pressed="false"></button></nav>
 <output id="status">Loading…</output>
@@ -95,8 +96,18 @@ let backgrounds,words,ready=false,time=0,previous=-1,saved=0,start=null,drag=nul
 let lastTickTime=-Infinity;
 const duration=32.5;
 const impactAt=23.5,vibrationAt=24.5,ringAt=26.65,autoSlide=29.85,returnAt=30.5;
-const spinAt=2,percussionAt=3.5,detailAt=percussionAt+2;
-const pullBackAt=9.35,wideRevealAt=9.95,wordHandoffAt=10.32;
+const spinAt=2,wordHandoffAt=10.32;
+const cueAngle=45;
+let percussionAt=5.5,detailAt=5.5;
+function setWheelCue(selected){
+ const initialAngle=(selected%720)*.5;
+ const travel=wrap(cueAngle-initialAngle,360)*2||720;
+ const fraction=travel/1439;
+ const progress=fraction<.5?Math.cbrt(fraction/4):1-Math.cbrt((1-fraction)/4);
+ percussionAt=spinAt+(wordHandoffAt-spinAt)*progress;
+ detailAt=percussionAt;
+}
+const pullBackAt=9.35,wideRevealAt=wordHandoffAt+1;
 let directDone=false;
 let reelAnchor=390,lastFrameTime=-1,returnStart=null,sliderDrag=null,slidePosition=0;
 const alarmTime=390;
@@ -138,7 +149,7 @@ function prepareLens(){
   el('lens').classList.add('native');
  }
 }
-const fit=()=>Math.min(1,innerWidth/393,innerHeight/852);
+const fit=()=>Math.min(innerWidth*.90/393,innerHeight*.84/852);
 function layout(full=0,zoom=1,visible=1,landScale=1,pan=0){
  const scale=fit(),w=393*scale,h=852*scale,p=el('phone');
  const width=w+(innerWidth-w)*full,height=h+(innerHeight-h)*full;
@@ -161,7 +172,7 @@ function tone(freq,length,volume){
  o.type='sine';o.frequency.value=freq;o.connect(g).connect(audio.destination);
  g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(volume,at+.002);g.gain.exponentialRampToValueAtTime(.0001,at+length);o.start(at);o.stop(at+length+.002)
 }
-function playWoodblockTick(isHour=false){
+function playWoodblockTick(isHour=false,strength=1){
  const now=performance.now();
  if(muted||!audio||audio.state!=='running'||now-lastTickTime<40)return;
  lastTickTime=now;
@@ -173,7 +184,7 @@ function playWoodblockTick(isHour=false){
  filter.frequency.value=isHour?285:620;
  filter.Q.value=isHour?2.5:3.5;
  gain.gain.setValueAtTime(.0001,at);
- gain.gain.linearRampToValueAtTime(isHour?.25:.18,at+.002);
+ gain.gain.linearRampToValueAtTime((isHour?.25:.18)*strength,at+.002);
  gain.gain.exponentialRampToValueAtTime(.0001,at+(isHour?.062:.037));
  osc.connect(filter).connect(gain).connect(audio.destination);
  osc.start(at);
@@ -250,6 +261,7 @@ function stop(){
  reveal('land',1);
  reveal('lens-scene',1);
  el('phone').style.background='';
+ el('phone').style.setProperty('--outline',1);
  layout();
  el('phone').style.transform='translate(-50%, -50%)';
  detailCamera(0);
@@ -266,7 +278,7 @@ function cubicPhase(t,a,b){
 }
 function paintScenery(t,opening,shake){
  if(!widePhoto)return;
- const scale=fit(),phoneHeight=852*scale;
+ const scale=fit()*holdZoom(),phoneHeight=852*scale;
  const ratio=widePhoto.naturalWidth/widePhoto.naturalHeight;
  const startHeight=widePhoto===backgrounds[6]?phoneHeight:phoneHeight*323/(325*.90);
  const endHeight=Math.max(innerHeight,innerWidth/ratio);
@@ -286,7 +298,7 @@ function paintScenery(t,opening,shake){
  el('wind-strength').setAttribute('scale',breeze*5.5);
  const insetX=(innerWidth-393*scale)/2*(1-opening);
  const insetY=(innerHeight-phoneHeight)/2*(1-opening);
- el('wide-scene').style.clipPath='inset('+insetY+'px '+insetX+'px round '+55*scale*(1-opening)+'px)';
+ el('wide-scene').style.clipPath='inset('+insetY+'px '+insetX+'px round '+(opening>0?0:55*scale)+'px)';
 }
 function paintBirds(t,minuteTop,wordWidth){
  const flight=clamp01((t-14.8)/6.5);
@@ -302,12 +314,14 @@ function paintBirds(t,minuteTop,wordWidth){
   bird.style.transform='translateY('+(Math.sin(t*2.5+i)*2.5)+'px) rotate('+(flap*3)+'deg) scaleY('+(.85+.13*flap)+')';
  });
 }
+const holdZoom=()=>innerHeight/(852*fit());
 function detailCamera(t){
  const stage=el('phone'),scale=fit();
  const follow=cubicPhase(t,detailAt,detailAt+.38)*(1-cubicPhase(t,7.62,7.76));
  const counter=t>=7.76?1-cubicPhase(t,pullBackAt,wordHandoffAt):0;
  const charge=cubicPhase(t,8.1,pullBackAt)*counter;
- const zoom=1+follow*1.5+counter*.72+charge*.78;
+ const hold=cubicPhase(t,pullBackAt,wordHandoffAt)*(1-cubicPhase(t,returnAt,returnAt+1.3));
+ const zoom=1+follow*1.5+counter*.72+charge*.78+(holdZoom()-1)*hold;
  const angle=(time%720)*Math.PI/360;
  const x=-Math.sin(angle)*139.5*follow*.66;
  const focusY=(526.7-426-Math.cos(angle)*139.5)*follow;
@@ -341,23 +355,25 @@ function frame(now){
  const runningTime=t<impactAt?reelAnchor+1439*spin:reelAnchor;
  // At the final minute the readout says :29 while the landscape has already arrived at :30.
  const heldLight=reelAnchor===alarmTime?360:reelAnchor;
- const light=t>=spinAt&&t<10.15?runningTime:heldLight;
+ const settleLight=cubicPhase(t,9.5,10.15);
+ const light=t>=spinAt&&t<10.15?runningTime+(heldLight+1440-runningTime)*settleLight:heldLight;
  const wheelTicks=t>=spinAt&&t<percussionAt;
  show(runningTime,wheelTicks,false,light);
- const opening=cubicPhase(t,wideRevealAt,11.55);
+ const opening=cubicPhase(t,wideRevealAt,12.4);
  const reset=cubicPhase(t,returning,returning+1.3);
  const alarm=cubicPhase(t,ringAt,ringAt+1)*(1-reset);
  const dissipation=cubicPhase(t,ringAt,ringAt+1);
- const phoneFade=cubicPhase(t,wideRevealAt,10.56)*(1-reset);
+ const phoneFade=cubicPhase(t,wideRevealAt,wideRevealAt+.43)*(1-reset);
+ el('phone').style.setProperty('--outline',1-phoneFade);
  reveal('land',1-phoneFade);
  el('phone').style.background=phoneFade?'transparent':'';
- const dissolveUI=cubicPhase(t,10.12,11.1);
+ const dissolveUI=cubicPhase(t,wideRevealAt,wideRevealAt+.65);
  layout(0,1,1-dissolveUI*(1-reset));
  detailCamera(t);
- const showWideWords=t>=wordHandoffAt&&reset===0;
+ const showWideWords=t>=wideRevealAt&&reset===0;
  if(showWideWords)for(const id of ['hour','minute'])reveal(id,0);
  reveal('lens-scene',1-phoneFade);
- const press=directDone?1-cubicPhase(t,0,.27):cubicPhase(t,.65,.85)*(1-cubicPhase(t,.85,1.28));
+ const press=directDone?0:cubicPhase(t,.65,.85)*(1-cubicPhase(t,.85,1.28));
  el('done').style.transform='scale('+(1-.06*press)+')';
  el('done').style.filter='brightness('+(1+.55*press)+')';
  if(!directDone&&lastFrameTime<.78&&t>=.78&&t<1.3)tone(660,.12,.055);
@@ -374,7 +390,7 @@ function frame(now){
  });
  reveal('ripples',1-dissipation);
  paintScenery(t,opening,shake);
- const grow=cubicPhase(t,wordHandoffAt,10.78),scale=fit(),phoneTop=(innerHeight-852*scale)/2;
+ const grow=cubicPhase(t,wideRevealAt,wideRevealAt+.46),scale=fit()*holdZoom(),phoneTop=(innerHeight-852*scale)/2;
  const baseWidth=393*scale;
  const largeWidth=Math.max(baseWidth,Math.min(innerWidth*.92,innerHeight*.82,baseWidth*1.58));
  const wordWidth=baseWidth+(largeWidth-baseWidth)*grow;
@@ -391,14 +407,14 @@ function frame(now){
  const lower=sceneTime%60,minute=el('dawn-minute');
  if(minute.dataset.value!==String(lower)){minute.src=words[lower].src;minute.dataset.value=lower}
  minute.classList.toggle('gold',t>=impactAt);
- if(lastFrameTime<impactAt&&t>=impactAt&&t<impactAt+.15){lastTickTime=-Infinity;playWoodblockTick()}
+ if(lastFrameTime<impactAt&&t>=impactAt&&t<impactAt+.15){lastTickTime=-Infinity;playWoodblockTick(false,1.65)}
  reveal('alarm-screen',alarm);
  const canSlide=alarm>.62&&returnStart===null;
  el('alarm-screen').inert=!canSlide;
  el('alarm-screen').style.pointerEvents=canSlide?'auto':'none';
  el('alarm-screen').style.filter='blur('+((1-alarm)*12)+'px)';
- el('alarm-card').style.setProperty('--phone-scale',scale);
- el('alarm-photo').style.transform='translateX('+(Math.sin(t*76)*alarm*1.8)+'px)';
+ el('alarm-card').style.setProperty('--phone-scale',fit());
+ el('alarm-card').style.translate=(Math.sin(t*76)*alarm*1.8)+'px 0';
  const slider=el('alarm-track');
  const position=sliderDrag||returnStart!==null?slidePosition:Math.max(slidePosition,cubicPhase(t,autoSlide,returnAt));
  el('alarm-thumb').style.transform='translateX('+((slider.clientWidth-98)*position)+'px)';
@@ -442,6 +458,7 @@ function restartReel(selected=alarmTime,clicked=false){
  el('done').disabled=true;
  primeTracks();
  reelAnchor=saved=selected;
+ setWheelCue(selected);
  returnStart=sliderDrag=null;
  slidePosition=0;lastFrameTime=-1;
  directDone=clicked;
@@ -509,7 +526,7 @@ el('cancel').onclick=()=>{
 el('done').onclick=()=>{if(ready&&!el('done').disabled)restartReel(time,true)};
 prepareLens();
 setPlay('Play');setMute();
-window.onresize=()=>{if(start===null)layout()};layout();el('ui').hidden=true;
+window.onresize=()=>{if(start!==null)return;if(pausedAt>0){const now=performance.now();start=now-pausedAt*1000;frame(now);cancelAnimationFrame(animationId);start=null;}else{layout();detailCamera(0)}};layout();el('ui').hidden=true;
 (async()=>{try{[backgrounds,words]=await Promise.all([sequence(24,i=>loadImage('meadow-backgrounds/'+String(i).padStart(2,'0')+'-00.png')),sequence(60,i=>loadImage('fonts-svg/EN/'+numberToSlug(i)+'.svg'))]);widePhoto=await loadImage(widePath).catch(error=>{
   console.warn('Wide dawn background failed; using the 06:00 frame.',error);
   return backgrounds[6];
