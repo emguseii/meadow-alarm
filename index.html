@@ -26,6 +26,10 @@ body{margin:0;isolation:isolate;background:#0a0a0c;color:white;font-family:-appl
 .lens-glint::after{content:"";position:absolute;inset:0;border-radius:inherit;background:conic-gradient(from -45deg,#dfedef80,#b8f5ff38,transparent,#ffa8ea32,#f8deaf48,transparent,#dfedef80);mask-image:radial-gradient(circle closest-side,transparent 97.8%,#000 99.6%,transparent 100%)}
 #wake{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:.7em 1.4em;white-space:nowrap;font-size:clamp(20px,3vw,34px);font-weight:400;letter-spacing:.02em;color:#fff;background:#0e191c4d;border:1px solid #ffffff57;box-shadow:0 0 32px #fff2;border-radius:100px;text-shadow:0 1px 9px #0008;pointer-events:none;opacity:0}
 #dial:active{cursor:grabbing}
+#wheel-hint{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;pointer-events:none;opacity:0;background:#18181927;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1.2px #fff9;text-align:center;font-size:18px;line-height:1.22;white-space:pre-line;transition:opacity .2s}
+#wheel-hint.visible{opacity:1}
+@media(prefers-reduced-motion:reduce){#wheel-hint{transition:none}}
+
 #knob{position:absolute;width:42.247px;height:42.247px;transform:translate(-50%,-50%);background:#fff6;border:3.775px solid #fff3;border-radius:50%;backdrop-filter:blur(12px);box-shadow:0 0 4.22px #0003,inset 1px 1px 4px #fff3}
 .actions{position:absolute;top:758.53px;left:16px;display:flex;align-items:center;gap:12px}
 button{font:400 18px/1.5 inherit;font-family:inherit;font-size:18px;color:white;width:174.5px;height:61px;border:0;border-radius:16px;background:#0009;backdrop-filter:blur(4px);box-shadow:inset 0 0 9.43px #0a0a0a80,inset 0 0 0 1px #ffffff22;cursor:pointer}
@@ -72,7 +76,8 @@ button:active{scale:.96}
 </filter></defs></svg>
 <main id="phone" aria-label="Set alarm"><div id="camera"><div id="land"><img id="bg-current" alt=""><img id="bg-next" alt=""></div>
 <div id="ui"><img id="phone-topbar" class="phone-top" src="Top Bar 6_30.png" alt=""><div class="reading" id="hour"><div class="word"></div><span class="unit">hours</span></div><div class="reading" id="minute"><div class="word"></div><span class="unit">minutes</span></div>
-<div id="dial" role="slider" tabindex="0" aria-label="Alarm time" aria-valuemin="0" aria-valuemax="1439"><div id="lens" aria-hidden="true"><div id="lens-scene"><img id="lens-current" alt=""><img id="lens-next" alt=""></div></div><div class="lens-glint"></div><div id="knob"></div></div>
+<div id="dial" role="slider" tabindex="0" aria-label="Alarm time" aria-valuemin="0" aria-valuemax="1439"><div id="lens" aria-hidden="true"><div id="lens-scene"><img id="lens-current" alt=""><img id="lens-next" alt=""></div></div><div class="lens-glint"></div><div id="wheel-hint" class="visible" aria-hidden="true">Rotate the circle
+to set the time</div><div id="knob"></div></div>
 <div class="actions"><button id="cancel">Cancel</button><button id="done">Done</button></div><div class="home"></div></div></div></main>
 <div id="wide-scene" aria-hidden="true"><img id="wide-photo" alt=""></div>
 <div id="dawn-words" aria-hidden="true"><img id="dawn-hour" alt=""><img id="dawn-minute" alt=""></div>
@@ -95,17 +100,25 @@ const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
 let backgrounds,words,ready=false,time=0,previous=-1,saved=0,start=null,drag=null,audio,animationId=0;
 let lastTickTime=-Infinity;
 const duration=32.5;
+const introLength=3.6;
+let leadIn=0,onboarding=true;
+const reelElapsed=now=>wrap((now-start)/1000,duration+leadIn);
+function showWheelHint(visible){
+ el('wheel-hint').classList.toggle('visible',visible);
+ const dial=el('dial');
+ if(visible)dial.setAttribute('aria-description','Rotate the circle to set the time');
+ else dial.removeAttribute('aria-description');
+}
 const impactAt=23.5,vibrationAt=24.5,ringAt=26.65,autoSlide=29.85,returnAt=30.5;
 const spinAt=2,wordHandoffAt=10.32;
-const cueAngle=45;
+const musicTime=10*60;
 let percussionAt=5.5,detailAt=5.5;
 function setWheelCue(selected){
- const initialAngle=(selected%720)*.5;
- const travel=wrap(cueAngle-initialAngle,360)*2||720;
- const fraction=travel/1439;
+ const travel=wrap(musicTime-selected,1440)||1440;
+ const fraction=Math.min(1,travel/1439);
  const progress=fraction<.5?Math.cbrt(fraction/4):1-Math.cbrt((1-fraction)/4);
  percussionAt=spinAt+(wordHandoffAt-spinAt)*progress;
- detailAt=percussionAt;
+ detailAt=Math.min(percussionAt,7.2);
 }
 const pullBackAt=9.35,wideRevealAt=wordHandoffAt+1;
 let directDone=false;
@@ -270,6 +283,7 @@ function stop(){
  el('done').style.filter='';
  el('alarm-screen').inert=true;
  el('alarm-screen').style.pointerEvents='none';
+ showWheelHint(onboarding);
  setPlay('Play');
 }
 function cubicPhase(t,a,b){
@@ -348,16 +362,18 @@ function setMute(){
 }
 function frame(now){
  if(start===null)return;
- const t=wrap((now-start)/1000,duration);
+ const elapsed=reelElapsed(now),t=elapsed-leadIn;
  if(t<lastFrameTime){directDone=false;returnStart=null;slidePosition=0;sliderDrag=null}
  const returning=returnStart??returnAt;
  const spin=cubicPhase(t,spinAt,wordHandoffAt);
- const runningTime=t<impactAt?reelAnchor+1439*spin:reelAnchor;
+ const demoTime=alarmTime+(120-alarmTime)*cubicPhase(elapsed,.65,1.95)+(alarmTime-120)*cubicPhase(elapsed,2.05,3.38);
+ const runningTime=t<0?demoTime:t<impactAt?reelAnchor+1439*spin:reelAnchor;
+ showWheelHint(leadIn>0&&elapsed<.65);
  // At the final minute the readout says :29 while the landscape has already arrived at :30.
  const heldLight=reelAnchor===alarmTime?360:reelAnchor;
  const settleLight=cubicPhase(t,9.5,10.15);
- const light=t>=spinAt&&t<10.15?runningTime+(heldLight+1440-runningTime)*settleLight:heldLight;
- const wheelTicks=t>=spinAt&&t<percussionAt;
+ const light=t<0?runningTime:t>=spinAt&&t<10.15?runningTime+(heldLight+1440-runningTime)*settleLight:heldLight;
+ const wheelTicks=(t<0&&elapsed>=.65)||(t>=spinAt&&t<percussionAt);
  show(runningTime,wheelTicks,false,light);
  const opening=cubicPhase(t,wideRevealAt,12.4);
  const reset=cubicPhase(t,returning,returning+1.3);
@@ -432,7 +448,7 @@ function frame(now){
 const slide=el('alarm-track');
 function finishAlarm(){
  if(start===null||returnStart!==null)return;
- returnStart=wrap((performance.now()-start)/1000,duration);
+ returnStart=reelElapsed(performance.now())-leadIn;
  slidePosition=1;
  sliderDrag=null;
 }
@@ -460,8 +476,10 @@ function restartReel(selected=alarmTime,clicked=false){
  reelAnchor=saved=selected;
  setWheelCue(selected);
  returnStart=sliderDrag=null;
- slidePosition=0;lastFrameTime=-1;
+ slidePosition=0;lastFrameTime=-Infinity;
  directDone=clicked;
+ leadIn=clicked?0:introLength;
+ onboarding=false;
  if(clicked)tone(660,.12,.055);
  show(selected,false,false,selected===alarmTime?360:selected);
  setPlay('Pause');
@@ -472,7 +490,7 @@ function restartReel(selected=alarmTime,clicked=false){
 function toggleReel(){
  if(!ready)return;
  if(start!==null){
-  pausedAt=wrap((performance.now()-start)/1000,duration);
+  pausedAt=reelElapsed(performance.now());
   start=null;
   cancelAnimationFrame(animationId);
   for(const {media} of tracks) media.pause();
@@ -498,7 +516,7 @@ el('mute').onclick=()=>{
 };
 function angle(e){const r=el('dial').getBoundingClientRect();return Math.atan2(e.clientX-r.left-r.width/2,r.top+r.height/2-e.clientY)*180/Math.PI}
 const dial=el('dial');
-dial.onpointerdown=e=>{if(!ready||drag||el('done').disabled||e.button!==0)return;unlock();stop();dial.setPointerCapture(e.pointerId);const a=angle(e);
+dial.onpointerdown=e=>{if(!ready||drag||el('done').disabled||e.button!==0)return;unlock();onboarding=false;stop();dial.setPointerCapture(e.pointerId);const a=angle(e);
  const offset=wrap(a-time*.5+180,360)-180;drag={id:e.pointerId,a,value:time+offset*2,stamp:e.timeStamp};show(drag.value,false)};
 dial.onpointermove=e=>{
  if(!drag||drag.id!==e.pointerId)return;
@@ -512,9 +530,10 @@ dial.onpointermove=e=>{
 dial.onlostpointercapture=()=>drag=null;
 window.onkeydown=e=>{if(!ready)return;if(e.code==='Space'&&!(e.target instanceof HTMLButtonElement)){e.preventDefault();if(!e.repeat)toggleReel()}
  else if(e.key==='Escape'){stop();show(saved)}
- else if(!el('done').disabled&&document.activeElement===dial&&['ArrowLeft','ArrowDown','ArrowUp','ArrowRight'].includes(e.key)){e.preventDefault();unlock();stop();show(time+(['ArrowRight','ArrowUp'].includes(e.key)?1:-1),true,true)}};
+ else if(!el('done').disabled&&document.activeElement===dial&&['ArrowLeft','ArrowDown','ArrowUp','ArrowRight'].includes(e.key)){e.preventDefault();unlock();onboarding=false;stop();show(time+(['ArrowRight','ArrowUp'].includes(e.key)?1:-1),true,true)}};
 el('cancel').onclick=()=>{
  if(!ready)return;
+ onboarding=true;
  stop();
  saved=reelAnchor;
  returnStart=sliderDrag=null;
