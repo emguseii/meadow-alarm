@@ -144,6 +144,7 @@ const hintUntil=2.15,introLength=5.1,staticMusicTurn=5.6;
 const counterStart=7.76,counterEnd=9.35,counterExtra=counterEnd-counterStart;
 // Cut the source immediately after its strong woodblock strike at 15.52 seconds.
 const percussionCut=15.60;
+const wheelTickFade=1.2;
 let leadIn=0,onboarding=true,listOpening=false,addedAlarm=null;
 const alarms=[
  {time:1418,days:[0],enabled:true},
@@ -330,13 +331,13 @@ function playWoodblockTick(isHour=false,strength=1){
  osc.start(at);
  osc.stop(at+(isHour?.064:.039));
 }
-function tickBetween(from,to){
+function tickBetween(from,to,strength){
  const delta=wrap(to-from+720,1440)-720;
  const end=from+delta;
  const first=delta>0?from+1:end;
  const last=delta>0?end:from-1;
- if(Math.ceil(first/60)*60<=last)playWoodblockTick(true);
- else if(Math.ceil(first/10)*10<=last)playWoodblockTick();
+ if(Math.ceil(first/60)*60<=last)playWoodblockTick(true,strength);
+ else if(Math.ceil(first/10)*10<=last)playWoodblockTick(false,strength);
 }
 function magneticTime(value,speed){
  const nearest=Math.round(value/10)*10;
@@ -386,7 +387,7 @@ function show(value,feedback=false,manual=false,light=value){
  const rad=((h%12)*60+m)*.5*Math.PI/180;
  el('knob').style.left=(50+50*Math.sin(rad))+'%';el('knob').style.top=(50-50*Math.cos(rad))+'%';
  el('dial').setAttribute('aria-valuenow',time);el('dial').setAttribute('aria-valuetext',numberToSlug(h)+(h===1?' hour ':' hours ')+numberToSlug(m)+(m===1?' minute':' minutes'));
- if(feedback&&previous>=0){tickBetween(previous,time);
+ if(feedback&&previous>=0){tickBetween(previous,time,Number(feedback));
  if(manual)navigator.vibrate?.(4)}
  previous=time;
  previousLight=lighting;
@@ -549,8 +550,9 @@ function frame(now){
  const sceneryTime=reelLandscapeTime(runningTime);
  const lightDelta=wrap(heldLight-sceneryTime+720,1440)-720;
  const light=t<0?runningTime:t>=spinAt&&t<10.15?sceneryTime+lightDelta*settleLight:heldLight;
- const wheelTicks=(t<0&&entry>=hintUntil)||(t>=spinAt&&t<percussionAt);
- show(runningTime,wheelTicks,false,light);
+ const wheelTickStrength=t<0?Number(entry>=hintUntil):t>=spinAt
+  ?1-cubicPhase(musicClock,percussionAt,percussionAt+wheelTickFade):0;
+ show(runningTime,wheelTickStrength,false,light);
  const opening=cubicPhase(t,wideRevealAt,12.4);
  const reset=cubicPhase(t,returning,returning+1.3);
  const alarm=cubicPhase(t,ringAt,ringAt+1)*(1-reset);
