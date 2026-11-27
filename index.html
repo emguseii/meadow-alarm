@@ -26,7 +26,7 @@ body{margin:0;isolation:isolate;background:#0a0a0c;color:white;font-family:-appl
 .lens-glint::after{content:"";position:absolute;inset:0;border-radius:inherit;background:conic-gradient(from -45deg,#dfedef80,#b8f5ff38,transparent,#ffa8ea32,#f8deaf48,transparent,#dfedef80);mask-image:radial-gradient(circle closest-side,transparent 97.8%,#000 99.6%,transparent 100%)}
 #wake{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:.7em 1.4em;white-space:nowrap;font-size:clamp(20px,3vw,34px);font-weight:400;letter-spacing:.02em;color:#fff;background:#0e191c4d;border:1px solid #ffffff57;box-shadow:0 0 32px #fff2;border-radius:100px;text-shadow:0 1px 9px #0008;pointer-events:none;opacity:0}
 #dial:active{cursor:grabbing}
-#wheel-hint{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;pointer-events:none;opacity:0;background:#18181927;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1.2px #fff9;text-align:center;font-size:18px;line-height:1.22;white-space:pre-line;transition:opacity .2s}
+#wheel-hint{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;pointer-events:none;opacity:0;background:rgb(255 255 255 / .10);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1.2px #fff9;text-align:center;font-size:18px;line-height:1.22;white-space:pre-line;transition:opacity .2s}
 #wheel-hint.visible{opacity:1}
 @media(prefers-reduced-motion:reduce){#wheel-hint{transition:none}}
 
@@ -64,6 +64,23 @@ button:active{scale:.96}
 #phone.detail #dial,#phone.detail .reading,#phone.detail .actions,#phone.detail .home,#phone.detail .phone-top{transition:opacity 130ms}
 #reel-controls{position:fixed;z-index:2;right:14px;bottom:14px;display:flex;gap:6px}
 #reel-controls button{width:auto;min-width:38px;height:34px;padding:0 10px;border-radius:18px;font-size:13px;background:#10131bd9;display:grid;place-items:center}#reel-controls svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#alarm-list{position:fixed;left:50%;top:50%;width:393px;height:852px;transform:translate(-50%,-50%) scale(var(--list-scale,1));border-radius:55px;background:#212121;box-shadow:inset 0 0 0 4px #fff4,0 0 0 4px #fff2;overflow:hidden;z-index:1}
+#alarm-list h1{position:absolute;left:16px;top:73px;margin:0;font-size:24px}
+#alarm-list .phone-top{margin-top:3px}
+#add-alarm{position:absolute;right:12px;top:61px;width:48px;height:48px;box-shadow:none;background:transparent;backdrop-filter:none;padding:0;display:grid;place-items:center}
+#add-alarm svg{width:29px;height:29px;stroke:#fff;stroke-linecap:round;stroke-width:3.5}
+#list-cards{position:absolute;inset:135px 16px 20px;overflow:auto;display:flex;flex-direction:column;gap:16px;scrollbar-width:none}
+.alarm-row{position:relative;border-radius:25px;background:#262626;border:1px solid #383838;padding:15px;flex:none;height:164px;display:grid;grid-template-columns:52px 1fr 52px;grid-template-rows:55px 58px;gap:17px 12px;align-items:center}
+.alarm-art{width:52px;height:52px;position:relative;border-radius:50%;background-position:center 69%;background-size:140%;border:1px solid #ffffff22}
+.alarm-art i{position:absolute;width:5px;height:5px;background:#fff346;border-radius:50%;transform:translate(-50%,-50%)}
+.alarm-name{font-size:22px;font-weight:650;line-height:1.18}
+.alarm-name small{font-size:11px;color:#a4aab2;font-weight:400}
+.alarm-switch{width:52px;height:31px;border-radius:30px;background:#929292;padding:4px;backdrop-filter:none;box-shadow:none;display:flex;align-items:center}
+.alarm-switch[aria-checked=true]{background:#04dc55;justify-content:flex-end}
+.alarm-switch::after{content:"";width:23px;height:23px;border-radius:50%;background:white}
+.alarm-days{grid-column:1/-1;display:flex;gap:3px}
+.alarm-days span{flex:1;min-width:0;height:57px;border-radius:24px;background:#3c3c3c;color:#a9afb7;display:grid;place-items:center;font-size:12px}
+.alarm-days .active{background:white;color:#232323}
 </style>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <filter id="liquid-glass-lens" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
@@ -86,6 +103,9 @@ to set the time</div><div id="knob"></div></div>
 <div id="alarm-screen" aria-hidden="true" inert><div id="alarm-card">
 <img id="alarm-photo" src="meadow-backgrounds/alarm-screen.png" alt="Alarm, six thirty">
 <div id="alarm-actions"><button id="snooze" aria-label="Snooze"></button><div id="alarm-track" role="button" tabindex="0" aria-label="Slide to stop alarm"><span aria-hidden="true">Slide to Stop</span><div id="alarm-thumb"></div></div></div></div></div>
+<section id="alarm-list" aria-label="Будильники"><img class="phone-top" src="Top Bar 6_29.png" alt="">
+<h1>Будильники</h1><button id="add-alarm" aria-label="Добавить будильник"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M15 3V27M3 15H27"/></svg></button>
+<div id="list-cards"></div></section>
 <nav id="reel-controls" aria-label="Showreel controls"><button id="play" aria-label="Play" title="Play"></button><button id="restart" aria-label="Restart" title="Restart"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11a8 8 0 1 1 2 7M4 4v7h7"/></svg></button><button id="mute" aria-label="Mute" title="Mute" aria-pressed="false"></button></nav>
 <output id="status">Loading…</output>
 <script>
@@ -100,8 +120,56 @@ const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
 let backgrounds,words,ready=false,time=0,previous=-1,saved=0,start=null,drag=null,audio,animationId=0;
 let lastTickTime=-Infinity;
 const duration=32.5;
-const introLength=3.6,staticMusicTurn=4;
-let leadIn=0,onboarding=true;
+const listLead=1.35,hintUntil=2.15,introLength=listLead+5.1,staticMusicTurn=4;
+let leadIn=0,onboarding=true,listOpening=false,addedAlarm=null;
+const alarms=[
+ {time:1418,days:[0],enabled:true},
+ {time:515,days:[0,1,2,3,4],enabled:false},
+ {time:1020,days:[],enabled:true}
+];
+function renderAlarms(){
+ const entries=addedAlarm===null?alarms:[{time:addedAlarm,days:[],enabled:true},...alarms];
+ el('list-cards').replaceChildren(...entries.map(({time,days,enabled})=>{
+  const h=Math.floor(time/60),m=time%60,angle=(time%720)*Math.PI/360;
+  const card=document.createElement('article');card.className='alarm-row';
+  card.innerHTML='<div class="alarm-art"><i></i></div><div class="alarm-name">'+numberToSlug(h)+' <small>hrs</small><br>'+numberToSlug(m)+' <small>min</small></div><button class="alarm-switch" role="switch" aria-label="Будильник '+numberToSlug(h)+' '+numberToSlug(m)+'" aria-checked="'+enabled+'"></button><div class="alarm-days">'+['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((day,i)=>'<span class="'+(days.includes(i)?'active':'')+'">'+day+'</span>').join('')+'</div>';
+  card.firstElementChild.style.backgroundImage='url("'+backgrounds[h].src+'")';
+  Object.assign(card.querySelector('i').style,{left:(50+49*Math.sin(angle))+'%',top:(50-49*Math.cos(angle))+'%'});
+  const control=card.querySelector('button');
+  control.onclick=()=>control.setAttribute('aria-checked',control.getAttribute('aria-checked')!=='true');
+  return card;
+ }));
+}
+function paintList(opacity,press=0){
+ const list=el('alarm-list');
+ list.style.setProperty('--list-scale',fit());
+ list.style.opacity=opacity;
+ list.style.pointerEvents=opacity>.95?'auto':'none';
+ list.inert=opacity<.95;
+ const add=el('add-alarm');
+ add.style.transform='scale('+(1-.16*press)+')';
+ add.style.backgroundColor='rgba(255,255,255,'+(.2*press)+')';
+}
+function saveListAlarm(value){
+ if(addedAlarm===value)return;
+ addedAlarm=value;
+ renderAlarms();
+}
+el('add-alarm').onclick=()=>{
+ if(!ready||listOpening||start!==null)return;
+ listOpening=true;
+ unlock();tone(530,.06,.07);
+ let began;
+ function animate(now){
+  if(!listOpening)return;
+  began??=now;
+  const t=(now-began)/1000;
+  paintList(1-cubicPhase(t,.13,.36),cubicPhase(t,0,.09)*(1-cubicPhase(t,.09,.28)));
+  if(t<.36)requestAnimationFrame(animate);
+  else{listOpening=false;onboarding=true;showWheelHint(true);el('dial').focus({preventScroll:true})}
+ }
+ requestAnimationFrame(animate);
+};
 const reelElapsed=now=>wrap((now-start)/1000,duration+leadIn+staticMusicTurn);
 function showWheelHint(visible){
  el('wheel-hint').classList.toggle('visible',visible);
@@ -272,6 +340,8 @@ function show(value,feedback=false,manual=false,light=value){
 }
 function stop(){
  start=null;
+ listOpening=false;
+ paintList(0);
  el('done').disabled=false;
  pausedAt=null;
  cancelAnimationFrame(animationId);
@@ -373,20 +443,21 @@ function frame(now){
  if(t<lastFrameTime){directDone=false;returnStart=null;slidePosition=0;sliderDrag=null}
  const returning=returnStart??returnAt;
  const spin=cubicPhase(t,spinAt,wordHandoffAt);
- const demoTime=alarmTime+(120-alarmTime)*cubicPhase(elapsed,.65,1.95)+(alarmTime-120)*cubicPhase(elapsed,2.05,3.38);
+ const entry=elapsed-listLead;
+ const demoTime=alarmTime+(120-alarmTime)*cubicPhase(entry,hintUntil,hintUntil+1.3)+(alarmTime-120)*cubicPhase(entry,hintUntil+1.4,hintUntil+2.73);
  const turnProgress=clamp01((musicClock-percussionAt)/staticMusicTurn);
  const turnEnd=musicTravel+720;
  const travelAfterTurn=wrap(1439-turnEnd,1440);
  const remainingProgress=clamp01((1439*spin-musicTravel)/Math.max(1,1439-musicTravel));
  const travel=musicClock<percussionAt?1439*spin:staticTurn?musicTravel+720*turnProgress:turnEnd+travelAfterTurn*remainingProgress;
  const runningTime=t<0?demoTime:t<impactAt?reelAnchor+travel:reelAnchor;
- showWheelHint(leadIn>0&&elapsed<.65);
+ showWheelHint(leadIn>0&&entry<hintUntil);
  // At the final minute the readout says :29 while the landscape has already arrived at :30.
  const heldLight=reelAnchor===alarmTime?360:reelAnchor;
  const settleLight=cubicPhase(t,9.5,10.15);
  const lightDelta=wrap(heldLight-runningTime+720,1440)-720;
  const light=t<0?runningTime:t>=spinAt&&t<10.15?runningTime+lightDelta*settleLight:heldLight;
- const wheelTicks=(t<0&&elapsed>=.65)||(t>=spinAt&&t<percussionAt);
+ const wheelTicks=(t<0&&entry>=hintUntil)||(t>=spinAt&&t<percussionAt);
  show(runningTime,wheelTicks,false,light);
  const opening=cubicPhase(t,wideRevealAt,12.4);
  const reset=cubicPhase(t,returning,returning+1.3);
@@ -405,7 +476,14 @@ function frame(now){
  const press=directDone?0:cubicPhase(t,.65,.85)*(1-cubicPhase(t,.85,1.28));
  el('done').style.transform='scale('+(1-.06*press)+')';
  el('done').style.filter='brightness('+(1+.55*press)+')';
- if(!directDone&&lastFrameTime<.78&&t>=.78&&t<1.3)tone(660,.12,.055);
+ if(lastFrameTime<.78&&t>=.78&&t<1.3){
+  saveListAlarm(reelAnchor);
+  if(!directDone)tone(660,.12,.055);
+ }
+ const listPress=cubicPhase(elapsed,.68,.8)*(1-cubicPhase(elapsed,.8,1.02));
+ const listIntro=leadIn?1-cubicPhase(elapsed,1.02,listLead):0;
+ paintList(Math.max(listIntro,cubicPhase(t,returning+.85,returning+1.55)),listPress);
+ if(leadIn&&lastFrameTime<.8-leadIn&&elapsed>=.8&&elapsed<1)tone(530,.06,.07);
  const scenicFade=(t>=wideRevealAt?1:0)*(1-dissipation);
  reveal('wide-scene',widePhoto?scenicFade:0);
  const vibration=t-vibrationAt;
@@ -436,7 +514,7 @@ function frame(now){
  const lower=sceneTime%60,minute=el('dawn-minute');
  if(minute.dataset.value!==String(lower)){minute.src=words[lower].src;minute.dataset.value=lower}
  minute.classList.toggle('gold',t>=impactAt);
- if(lastFrameTime<impactAt&&t>=impactAt&&t<impactAt+.15){lastTickTime=-Infinity;playWoodblockTick(false,1.65)}
+ if(lastFrameTime<impactAt&&t>=impactAt&&t<impactAt+.15){lastTickTime=-Infinity;playWoodblockTick(false,2.6);tone(112,.085,.16)}
  reveal('alarm-screen',alarm);
  const canSlide=alarm>.62&&returnStart===null;
  el('alarm-screen').inert=!canSlide;
@@ -493,7 +571,7 @@ function restartReel(selected=alarmTime,clicked=false){
  directDone=clicked;
  leadIn=clicked?0:introLength;
  onboarding=false;
- if(clicked)tone(660,.12,.055);
+ if(clicked){saveListAlarm(selected);tone(660,.12,.055);}
  show(selected,false,false,selected===alarmTime?360:selected);
  setPlay('Pause');
  document.documentElement.style.setProperty('--play-state','running');
@@ -553,12 +631,13 @@ el('cancel').onclick=()=>{
  slidePosition=0;lastFrameTime=-1;
  show(reelAnchor,false,false,reelAnchor===alarmTime?360:reelAnchor);
  pausedAt=0;
+ paintList(1);
  setPlay('Resume');
 };
 el('done').onclick=()=>{if(ready&&!el('done').disabled)restartReel(time,true)};
 prepareLens();
 setPlay('Play');setMute();
-window.onresize=()=>{if(start!==null)return;if(pausedAt>0){const now=performance.now();start=now-pausedAt*1000;frame(now);cancelAnimationFrame(animationId);start=null;}else{layout();detailCamera(0)}};layout();el('ui').hidden=true;
+window.onresize=()=>{if(start!==null)return;if(pausedAt>0){const now=performance.now();start=now-pausedAt*1000;frame(now);cancelAnimationFrame(animationId);start=null;}else{layout();detailCamera(0);el('alarm-list').style.setProperty('--list-scale',fit())}};layout();el('ui').hidden=true;
 (async()=>{try{[backgrounds,words]=await Promise.all([sequence(24,i=>loadImage('meadow-backgrounds/'+String(i).padStart(2,'0')+'-00.png')),sequence(60,i=>loadImage('fonts-svg/EN/'+numberToSlug(i)+'.svg'))]);widePhoto=await loadImage(widePath).catch(error=>{
   console.warn('Wide dawn background failed; using the 06:00 frame.',error);
   return backgrounds[6];
@@ -572,5 +651,5 @@ window.onresize=()=>{if(start!==null)return;if(pausedAt>0){const now=performance
   el('birds').append(bird);
  }
  el('dawn-hour').src=words[6].src;
- saved=alarmTime;show(alarmTime,false,false,360);ready=true;el('status').hidden=true;el('ui').hidden=false}catch{el('status').textContent='Could not load local alarm assets.'}})();
+ saved=alarmTime;show(alarmTime,false,false,360);ready=true;renderAlarms();paintList(1);el('status').hidden=true;el('ui').hidden=false}catch{el('status').textContent='Could not load local alarm assets.'}})();
 </script></html>
