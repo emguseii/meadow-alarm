@@ -121,6 +121,9 @@ let backgrounds,words,ready=false,time=0,previous=-1,saved=0,start=null,drag=nul
 let lastTickTime=-Infinity;
 const duration=32.5;
 const listLead=1.35,hintUntil=2.15,introLength=listLead+5.1,staticMusicTurn=4;
+const counterStart=7.76,counterEnd=9.35,counterExtra=counterEnd-counterStart;
+// Cut the source immediately after its strong woodblock strike at 13.51 seconds.
+const percussionCut=13.59;
 let leadIn=0,onboarding=true,listOpening=false,addedAlarm=null;
 const alarms=[
  {time:1418,days:[0],enabled:true},
@@ -170,7 +173,7 @@ el('add-alarm').onclick=()=>{
  }
  requestAnimationFrame(animate);
 };
-const reelElapsed=now=>wrap((now-start)/1000,duration+leadIn+staticMusicTurn);
+const reelElapsed=now=>wrap((now-start)/1000,duration+leadIn+staticMusicTurn+counterExtra);
 function showWheelHint(visible){
  el('wheel-hint').classList.toggle('visible',visible);
  const dial=el('dial');
@@ -184,7 +187,10 @@ let percussionAt=5.5,detailAt=5.5,musicTravel=210;
 function storyTime(elapsed){
  const t=elapsed-leadIn;
  if(t<percussionAt)return t;
- return Math.max(percussionAt,t-staticMusicTurn);
+ const afterTurn=Math.max(percussionAt,t-staticMusicTurn);
+ if(afterTurn<=counterStart)return afterTurn;
+ if(afterTurn<counterEnd+counterExtra)return counterStart+(afterTurn-counterStart)/2;
+ return afterTurn-counterExtra;
 }
 function setWheelCue(selected){
  const travel=wrap(musicTime-selected,1440)||1440;
@@ -194,7 +200,7 @@ function setWheelCue(selected){
  percussionAt=spinAt+(wordHandoffAt-spinAt)*progress;
  detailAt=Math.min(percussionAt,7.2);
 }
-const pullBackAt=9.35,wideRevealAt=wordHandoffAt+1;
+const pullBackAt=counterEnd,wideRevealAt=wordHandoffAt+1;
 let directDone=false;
 let reelAnchor=390,lastFrameTime=-1,returnStart=null,sliderDrag=null,slidePosition=0;
 const alarmTime=390;
@@ -408,7 +414,7 @@ const holdZoom=()=>innerHeight/(852*fit());
 function detailCamera(t){
  const stage=el('phone'),scale=fit();
  const follow=cubicPhase(t,detailAt,detailAt+.38)*(1-cubicPhase(t,7.62,7.76));
- const counter=t>=7.76?1-cubicPhase(t,pullBackAt,wordHandoffAt):0;
+ const counter=t>=counterStart?1-cubicPhase(t,pullBackAt,wordHandoffAt):0;
  const charge=cubicPhase(t,8.1,pullBackAt)*counter;
  const hold=cubicPhase(t,pullBackAt,wordHandoffAt)*(1-cubicPhase(t,returnAt,returnAt+1.3));
  const zoom=1+follow*1.5+counter*.72+charge*.78+(holdZoom()-1)*hold;
@@ -449,7 +455,7 @@ function frame(now){
  const turnEnd=musicTravel+720;
  const travelAfterTurn=wrap(1439-turnEnd,1440);
  const remainingProgress=clamp01((1439*spin-musicTravel)/Math.max(1,1439-musicTravel));
- const travel=musicClock<percussionAt?1439*spin:staticTurn?musicTravel+720*turnProgress:turnEnd+travelAfterTurn*remainingProgress;
+ const travel=musicClock<percussionAt?1439*spin:staticTurn?musicTravel+720*turnProgress*(.55+.45*turnProgress):turnEnd+travelAfterTurn*remainingProgress;
  const runningTime=t<0?demoTime:t<impactAt?reelAnchor+travel:reelAnchor;
  showWheelHint(leadIn>0&&entry<hintUntil);
  // At the final minute the readout says :29 while the landscape has already arrived at :30.
@@ -514,7 +520,7 @@ function frame(now){
  const lower=sceneTime%60,minute=el('dawn-minute');
  if(minute.dataset.value!==String(lower)){minute.src=words[lower].src;minute.dataset.value=lower}
  minute.classList.toggle('gold',t>=impactAt);
- if(lastFrameTime<impactAt&&t>=impactAt&&t<impactAt+.15){lastTickTime=-Infinity;playWoodblockTick(false,2.6);tone(112,.085,.16)}
+ if(lastFrameTime<impactAt&&t>=impactAt&&t<impactAt+.15){lastTickTime=-Infinity;playWoodblockTick(false,3.15);tone(112,.085,.24)}
  reveal('alarm-screen',alarm);
  const canSlide=alarm>.62&&returnStart===null;
  el('alarm-screen').inert=!canSlide;
@@ -528,11 +534,11 @@ function frame(now){
  slider.classList.toggle('moving',position>.002);
  slider.style.setProperty('--cover',Math.min(1,position*32));
  slider.style.setProperty('--shine',((t*57)%100)+'%');
- cue(tracks[0],musicClock,percussionAt,13.25+staticMusicTurn,.73*cubicPhase(musicClock,percussionAt,percussionAt+.25)*(1-cubicPhase(t,11.1,13.25)));
- cue(tracks[1],t,12,impactAt,.52*cubicPhase(t,12,14));
+ cue(tracks[0],musicClock,percussionAt,percussionAt+percussionCut,.73*cubicPhase(musicClock,percussionAt,percussionAt+.25));
+ cue(tracks[1],t,12,impactAt,.63*cubicPhase(t,12,17));
  cue(tracks[4],t,12,impactAt,.34*cubicPhase(t,12,13.5),1.1);
  cue(tracks[2],t,vibrationAt,ringAt,.34);
- cue(tracks[3],t,ringAt,returning+.3,.9*(1-cubicPhase(t,returning,returning+.3)));
+ cue(tracks[3],t,ringAt,returning+.3,.72*(1-cubicPhase(t,returning,returning+.3)));
  lastFrameTime=t;
  animationId=requestAnimationFrame(frame);
 }
