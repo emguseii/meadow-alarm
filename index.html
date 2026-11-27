@@ -40,7 +40,7 @@ button:active{scale:.96}
 #status{position:fixed;inset:48% 0 auto;text-align:center;pointer-events:none}
 #wide-scene,#dawn-words,#ripples,#alarm-screen{position:fixed;inset:0;pointer-events:none;opacity:0}
 #wide-scene{z-index:-1;overflow:hidden;background:#0a0a0c}
-#wide-photo{position:absolute;max-width:none;transform-origin:50% 70%}
+#wide-photo,#wide-next{position:absolute;max-width:none;object-fit:cover;transform-origin:50% 70%}
 #birds{position:fixed;left:0;top:0;width:160px;height:44px;opacity:0;pointer-events:none;transform-origin:top left}
 #birds img{position:absolute;width:15px;height:auto;filter:brightness(.55);transform-origin:center}
 #dawn-words{text-align:center}
@@ -49,18 +49,22 @@ button:active{scale:.96}
 #ripples span{position:absolute;left:50%;top:53%;width:min(52vw,500px);aspect-ratio:1;border:1px solid #fff7;border-radius:50%}
 #alarm-screen{display:grid;place-items:center;background:#09090c}
 #alarm-card{position:absolute;left:50%;top:50%;overflow:hidden;width:393px;height:852px;border-radius:55px;background:#758099;color:white;transform:translate(-50%,-50%) scale(var(--phone-scale,1))}
-#alarm-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
+#alarm-background{position:absolute;inset:0;filter:blur(9px) brightness(.86);transform:scale(1.055)}
+#alarm-background img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#alarm-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;clip-path:inset(13px 23px 811px 279px);pointer-events:none}
+#alarm-title{position:absolute;left:0;right:0;top:103px;text-align:center;font-size:26px;font-weight:650}
+#alarm-words{position:absolute;top:176px;width:100%;display:grid;gap:10px}
+#alarm-words [role=img]{position:relative;left:50%;transform:translateX(-50%);width:570px;height:110px;background:#f5ff00;mask-size:100% 100%;mask-position:center;mask-repeat:no-repeat}
+#alarm-card::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 3px #fff5;pointer-events:none}
 .phone-top{position:absolute;left:0;top:0;width:393px;height:59px;pointer-events:none}
 #alarm-card{background:transparent}
 #phone::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 2px #ffffff33;pointer-events:none;opacity:var(--outline,1)}
 #alarm-actions{position:absolute;left:16px;right:16px;bottom:35px;display:grid;gap:11px}
 #snooze,#alarm-track{width:100%;height:98px;border:0;border-radius:49px}
-#snooze{background:transparent;box-shadow:none;backdrop-filter:none}
-#alarm-track{position:relative;touch-action:none;cursor:grab}
-#alarm-track::before{content:"";position:absolute;inset:0;border-radius:inherit;background:#2c2b1f;opacity:var(--cover,0)}
-#alarm-track span{position:absolute;left:91px;right:16px;top:50%;transform:translateY(-50%);font-size:23px;line-height:1;white-space:nowrap;text-align:center;color:#dddccf;opacity:0;pointer-events:none}
-#alarm-track.moving span{opacity:calc(1 - var(--label-hide,0))}
-#alarm-thumb{position:absolute;left:0;top:0;width:98px;height:98px;border:1px solid #fff3;border-radius:50%;background:#25251b;display:grid;place-items:center;opacity:var(--cover,0)}
+#snooze{background:#f5ff00;color:#191904;font-size:25px;font-weight:700;box-shadow:none;backdrop-filter:none}
+#alarm-track{position:relative;touch-action:none;cursor:grab;background:#2c2b1fba}
+#alarm-track span{position:absolute;left:91px;right:16px;top:50%;transform:translateY(-50%);font-size:23px;line-height:1;white-space:nowrap;text-align:center;color:#dddccf;opacity:calc(1 - var(--label-hide,0));pointer-events:none}
+#alarm-thumb{position:absolute;left:0;top:0;width:98px;height:98px;border:1px solid #fff3;border-radius:50%;background:#25251b;display:grid;place-items:center}
 #alarm-thumb::after{content:"";width:35px;height:35px;border-radius:10px;background:white}
 #phone.detail #dial,#phone.detail .reading,#phone.detail .actions,#phone.detail .home,#phone.detail .phone-top{transition:opacity 130ms}
 #reel-controls{position:fixed;z-index:2;right:14px;bottom:14px;display:flex;gap:6px}
@@ -105,13 +109,15 @@ button:active{scale:.96}
 <div id="dial" role="slider" tabindex="0" aria-label="Alarm time" aria-valuemin="0" aria-valuemax="1439"><div id="lens" aria-hidden="true"><div id="lens-scene"><img id="lens-current" alt=""><img id="lens-next" alt=""></div></div><div class="lens-glint"></div><div id="wheel-hint" class="visible" aria-hidden="true">Rotate the circle
 to set the time</div><div id="knob"></div></div>
 <div class="actions"><button id="cancel">Cancel</button><button id="done">Done</button></div><div class="home"></div></div></div></main>
-<div id="wide-scene" aria-hidden="true"><img id="wide-photo" alt=""></div>
+<div id="wide-scene" aria-hidden="true"><img id="wide-photo" alt=""><img id="wide-next" alt=""></div>
 <div id="dawn-words" aria-hidden="true"><img id="dawn-hour" alt=""><img id="dawn-minute" alt=""></div>
 <div id="birds" aria-hidden="true"></div>
 <div id="ripples" aria-hidden="true"><span></span><span></span><span></span></div>
 <div id="alarm-screen" aria-hidden="true" inert><div id="alarm-card">
-<img id="alarm-photo" src="meadow-backgrounds/alarm-screen.png" alt="Alarm, six thirty">
-<div id="alarm-actions"><button id="snooze" aria-label="Snooze"></button><div id="alarm-track" role="button" tabindex="0" aria-label="Slide to stop alarm"><span aria-hidden="true">Slide to Stop</span><div id="alarm-thumb"></div></div></div></div></div>
+<div id="alarm-background"><img id="alarm-current" alt=""><img id="alarm-next" alt=""></div>
+<img id="alarm-photo" src="meadow-backgrounds/alarm-screen.png" alt="">
+<div id="alarm-title">◷ Alarm</div><div id="alarm-words"><div id="alarm-hour" role="img"></div><div id="alarm-minute" role="img"></div></div>
+<div id="alarm-actions"><button id="snooze">Snooze</button><div id="alarm-track" role="button" tabindex="0" aria-label="Slide to stop alarm"><span aria-hidden="true">Slide to Stop</span><div id="alarm-thumb"></div></div></div></div></div>
 <section id="alarm-list" aria-label="Будильники"><img class="phone-top" src="Top Bar 6_29.png" alt="">
 <h1>Будильники</h1><button id="add-alarm" aria-label="Добавить будильник"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M15 3V27M3 15H27"/></svg></button>
 <div id="list-cards"></div></section>
@@ -409,23 +415,41 @@ function cubicPhase(t,a,b){
  const x=clamp01((t-a)/(b-a));
  return x<.5?4*x**3:1-(-2*x+2)**3/2;
 }
+let scenePhoto;
+function setWakeAssets(value){
+ const h=Math.floor(value/60),m=value%60;
+ const isDefault=value===alarmTime;
+ const current=backgrounds[h],next=backgrounds[(h+1)%24],blend=isDefault?0:m/60;
+ for(const [id,n] of [['alarm-hour',h],['alarm-minute',m]]){
+  el(id).style.maskImage='url("'+words[n].src+'")';
+  el(id).setAttribute('aria-label',numberToSlug(n));
+ }
+ el('alarm-current').src=current.src;
+ el('alarm-next').src=next.src;
+ reveal('alarm-next',blend);
+ scenePhoto=isDefault?widePhoto:current;
+ el('wide-photo').src=scenePhoto.src;
+ el('wide-next').src=next.src;
+ reveal('wide-next',blend);
+}
 function paintScenery(t,opening,shake){
- if(!widePhoto)return;
+ if(!scenePhoto)return;
+ const originalWide=reelAnchor===alarmTime&&scenePhoto!==backgrounds[6];
  const scale=fit()*holdZoom(),phoneHeight=852*scale;
- const ratio=widePhoto.naturalWidth/widePhoto.naturalHeight;
- const startHeight=widePhoto===backgrounds[6]?phoneHeight:phoneHeight*323/(325*.90);
+ const ratio=scenePhoto.naturalWidth/scenePhoto.naturalHeight;
+ const startHeight=originalWide?phoneHeight*323/(325*.90):phoneHeight;
  const endHeight=Math.max(innerHeight,innerWidth/ratio);
  const height=startHeight+(endHeight-startHeight)*opening;
- const cropOffset=widePhoto===backgrounds[6]?0:startHeight*15/323;
+ const cropOffset=originalWide?startHeight*15/323:0;
  const startTop=(innerHeight-phoneHeight)/2-cropOffset;
  const endTop=(innerHeight-height)/2;
- Object.assign(el('wide-photo').style,{
+ for(const id of ['wide-photo','wide-next'])Object.assign(el(id).style,{
   width:height*ratio+'px',height:height+'px',
   left:(innerWidth-height*ratio)/2+'px',top:(startTop+(endTop-startTop)*opening)+'px',
   transform:'translateX('+shake+'px)'
  });
  const breeze=cubicPhase(t,12.2,13.5);
- el('wide-photo').style.filter=breeze?'url(#dawn-wind)':'';
+ for(const id of ['wide-photo','wide-next'])el(id).style.filter=breeze?'url(#dawn-wind)':'';
  el('wind-offset').setAttribute('dx',Math.sin(t*1.15)*32);
  el('wind-offset').setAttribute('dy',Math.cos(t*.85)*12);
  el('wind-strength').setAttribute('scale',breeze*5.5);
@@ -519,7 +543,7 @@ function frame(now){
  reveal('phone',t>=ringAt?0:1);
  const dissipation=cubicPhase(t,ringAt,ringAt+1);
  const phoneFade=cubicPhase(t,wideRevealAt,wideRevealAt+.43)*(1-reset);
- el('phone').style.setProperty('--outline',1-phoneFade);
+ el('phone').style.setProperty('--outline',t>=wideRevealAt-.035?0:1);
  reveal('land',1-phoneFade);
  el('phone').style.background=phoneFade?'transparent':'';
  const dissolveUI=cubicPhase(t,wideRevealAt,wideRevealAt+.65);
@@ -537,7 +561,7 @@ function frame(now){
  }
  paintList(reset);
  const scenicFade=(t>=wideRevealAt?1:0)*(1-dissipation);
- reveal('wide-scene',widePhoto?scenicFade:0);
+ reveal('wide-scene',scenePhoto?scenicFade:0);
  const vibration=t-vibrationAt;
  let shake=0;
  [...el('ripples').children].forEach((ring,i)=>{
@@ -577,8 +601,6 @@ function frame(now){
  const slider=el('alarm-track');
  const position=sliderDrag||returnStart!==null?slidePosition:Math.max(slidePosition,cubicPhase(t,autoSlide,returnAt));
  el('alarm-thumb').style.transform='translateX('+((slider.clientWidth-98)*position)+'px)';
- slider.classList.toggle('moving',position>.002);
- slider.style.setProperty('--cover',position>.002?1:0);
  slider.style.setProperty('--label-hide',cubicPhase(position,.42,.83));
  cue(tracks[0],musicClock,percussionAt,percussionAt+percussionCut,.73*cubicPhase(musicClock,percussionAt,percussionAt+.25));
  cue(tracks[1],t,12,impactAt,.63*cubicPhase(t,12,17));
@@ -586,6 +608,12 @@ function frame(now){
  cue(tracks[2],t,vibrationAt,vibrationEnd,.34);
  cue(tracks[3],t,ringAt,returning+.3,.72*(1-cubicPhase(t,returning,returning+.3)));
  lastFrameTime=t;
+ if(t>=returning+1.3){
+  stop();
+  reveal('phone',0);
+  paintList(1);
+  return;
+ }
  animationId=requestAnimationFrame(frame);
 }
 const slide=el('alarm-track');
@@ -617,6 +645,7 @@ function restartReel(selected=alarmTime,clicked=false){
  el('done').disabled=true;
  primeTracks();
  reelAnchor=saved=selected;
+ setWakeAssets(selected);
  setWheelCue(selected);
  returnStart=sliderDrag=null;
  slidePosition=0;lastFrameTime=-Infinity;
@@ -694,7 +723,7 @@ window.onresize=()=>{if(start!==null)return;if(pausedAt>0){const now=performance
   console.warn('Wide dawn background failed; using the 06:00 frame.',error);
   return backgrounds[6];
  });
- el('wide-photo').src=widePhoto.src;
+ setWakeAssets(alarmTime);
 
  for(const [x,y,size,opacity] of [[0,17,12,.65],[26,8,15,.78],[45,24,10,.56],[75,15,12,.67],[99,2,15,.76],[126,11,13,.7]]){
   const bird=new Image();
@@ -703,5 +732,5 @@ window.onresize=()=>{if(start!==null)return;if(pausedAt>0){const now=performance
   el('birds').append(bird);
  }
  el('dawn-hour').src=words[6].src;
- saved=alarmTime;show(alarmTime,false,false,360);ready=true;renderAlarms();paintList(1);el('status').hidden=true;el('ui').hidden=false}catch{el('status').textContent='Could not load local alarm assets.'}})();
+ saved=alarmTime;show(alarmTime,false,false,360);ready=true;renderAlarms();paintList(0);el('status').hidden=true;el('ui').hidden=false}catch{el('status').textContent='Could not load local alarm assets.'}})();
 </script></html>
