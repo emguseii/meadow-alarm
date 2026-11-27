@@ -100,7 +100,7 @@ const pullBackAt=9.35,wideRevealAt=9.95,wordHandoffAt=10.32;
 let directDone=false;
 let reelAnchor=390,lastFrameTime=-1,returnStart=null,sliderDrag=null,slidePosition=0;
 const alarmTime=390;
-const widePath="meadow-backgrounds/Пейзаж утренний 2.png";
+const widePath="meadow-backgrounds/dawn-wide.png";
 const tracks=["adinkra_audio-congas-and-woodblock-526722.mp3", "звуки пения птитц.mp3", "vibrotone-for-three-vibration-waves.mp3", "iphone_alarm.mp3", "3d-zvuk-atmosfera-derevni.mp3"].map(path=>{
  const media=new Audio(path);
  media.preload='auto';
@@ -268,10 +268,11 @@ function paintScenery(t,opening,shake){
  if(!widePhoto)return;
  const scale=fit(),phoneHeight=852*scale;
  const ratio=widePhoto.naturalWidth/widePhoto.naturalHeight;
- const startHeight=phoneHeight*323/(325*.90);
+ const startHeight=widePhoto===backgrounds[6]?phoneHeight:phoneHeight*323/(325*.90);
  const endHeight=Math.max(innerHeight,innerWidth/ratio);
  const height=startHeight+(endHeight-startHeight)*opening;
- const startTop=(innerHeight-phoneHeight)/2-startHeight*15/323;
+ const cropOffset=widePhoto===backgrounds[6]?0:startHeight*15/323;
+ const startTop=(innerHeight-phoneHeight)/2-cropOffset;
  const endTop=(innerHeight-height)/2;
  Object.assign(el('wide-photo').style,{
   width:height*ratio+'px',height:height+'px',
@@ -503,8 +504,11 @@ el('done').onclick=()=>{if(ready&&!el('done').disabled)restartReel(time,true)};
 prepareLens();
 setPlay('Play');setMute();
 window.onresize=()=>{if(start===null)layout()};layout();el('ui').hidden=true;
-(async()=>{try{[backgrounds,words]=await Promise.all([sequence(24,i=>loadImage('meadow-backgrounds/'+String(i).padStart(2,'0')+'-00.png')),sequence(60,i=>loadImage('fonts-svg/EN/'+numberToSlug(i)+'.svg'))]);widePhoto=await loadImage(widePath).catch(()=>null);
- if(widePhoto)el('wide-photo').src=widePhoto.src;
+(async()=>{try{[backgrounds,words]=await Promise.all([sequence(24,i=>loadImage('meadow-backgrounds/'+String(i).padStart(2,'0')+'-00.png')),sequence(60,i=>loadImage('fonts-svg/EN/'+numberToSlug(i)+'.svg'))]);widePhoto=await loadImage(widePath).catch(error=>{
+  console.warn('Wide dawn background failed; using the 06:00 frame.',error);
+  return backgrounds[6];
+ });
+ el('wide-photo').src=widePhoto.src;
 
  for(const [x,y,size,opacity] of [[0,17,12,.65],[26,8,15,.78],[45,24,10,.56],[75,15,12,.67],[99,2,15,.76],[126,11,13,.7]]){
   const bird=new Image();
