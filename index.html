@@ -100,9 +100,9 @@ const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
 let backgrounds,words,ready=false,time=0,previous=-1,saved=0,start=null,drag=null,audio,animationId=0;
 let lastTickTime=-Infinity;
 const duration=32.5;
-const introLength=3.6;
+const introLength=3.6,staticMusicTurn=4;
 let leadIn=0,onboarding=true;
-const reelElapsed=now=>wrap((now-start)/1000,duration+leadIn);
+const reelElapsed=now=>wrap((now-start)/1000,duration+leadIn+staticMusicTurn);
 function showWheelHint(visible){
  el('wheel-hint').classList.toggle('visible',visible);
  const dial=el('dial');
@@ -112,10 +112,16 @@ function showWheelHint(visible){
 const impactAt=23.5,vibrationAt=24.5,ringAt=26.65,autoSlide=29.85,returnAt=30.5;
 const spinAt=2,wordHandoffAt=10.32;
 const musicTime=10*60;
-let percussionAt=5.5,detailAt=5.5;
+let percussionAt=5.5,detailAt=5.5,musicTravel=210;
+function storyTime(elapsed){
+ const t=elapsed-leadIn;
+ if(t<percussionAt)return t;
+ return Math.max(percussionAt,t-staticMusicTurn);
+}
 function setWheelCue(selected){
  const travel=wrap(musicTime-selected,1440)||1440;
- const fraction=Math.min(1,travel/1439);
+ musicTravel=Math.min(1439,travel);
+ const fraction=musicTravel/1439;
  const progress=fraction<.5?Math.cbrt(fraction/4):1-Math.cbrt((1-fraction)/4);
  percussionAt=spinAt+(wordHandoffAt-spinAt)*progress;
  detailAt=Math.min(percussionAt,7.2);
@@ -362,17 +368,24 @@ function setMute(){
 }
 function frame(now){
  if(start===null)return;
- const elapsed=reelElapsed(now),t=elapsed-leadIn;
+ const elapsed=reelElapsed(now),musicClock=elapsed-leadIn,t=storyTime(elapsed);
+ const staticTurn=musicClock>=percussionAt&&musicClock<percussionAt+staticMusicTurn;
  if(t<lastFrameTime){directDone=false;returnStart=null;slidePosition=0;sliderDrag=null}
  const returning=returnStart??returnAt;
  const spin=cubicPhase(t,spinAt,wordHandoffAt);
  const demoTime=alarmTime+(120-alarmTime)*cubicPhase(elapsed,.65,1.95)+(alarmTime-120)*cubicPhase(elapsed,2.05,3.38);
- const runningTime=t<0?demoTime:t<impactAt?reelAnchor+1439*spin:reelAnchor;
+ const turnProgress=clamp01((musicClock-percussionAt)/staticMusicTurn);
+ const turnEnd=musicTravel+720;
+ const travelAfterTurn=wrap(1439-turnEnd,1440);
+ const remainingProgress=clamp01((1439*spin-musicTravel)/Math.max(1,1439-musicTravel));
+ const travel=musicClock<percussionAt?1439*spin:staticTurn?musicTravel+720*turnProgress:turnEnd+travelAfterTurn*remainingProgress;
+ const runningTime=t<0?demoTime:t<impactAt?reelAnchor+travel:reelAnchor;
  showWheelHint(leadIn>0&&elapsed<.65);
  // At the final minute the readout says :29 while the landscape has already arrived at :30.
  const heldLight=reelAnchor===alarmTime?360:reelAnchor;
  const settleLight=cubicPhase(t,9.5,10.15);
- const light=t<0?runningTime:t>=spinAt&&t<10.15?runningTime+(heldLight+1440-runningTime)*settleLight:heldLight;
+ const lightDelta=wrap(heldLight-runningTime+720,1440)-720;
+ const light=t<0?runningTime:t>=spinAt&&t<10.15?runningTime+lightDelta*settleLight:heldLight;
  const wheelTicks=(t<0&&elapsed>=.65)||(t>=spinAt&&t<percussionAt);
  show(runningTime,wheelTicks,false,light);
  const opening=cubicPhase(t,wideRevealAt,12.4);
@@ -385,7 +398,7 @@ function frame(now){
  el('phone').style.background=phoneFade?'transparent':'';
  const dissolveUI=cubicPhase(t,wideRevealAt,wideRevealAt+.65);
  layout(0,1,1-dissolveUI*(1-reset));
- detailCamera(t);
+ detailCamera(staticTurn?0:t);
  const showWideWords=t>=wideRevealAt&&reset===0;
  if(showWideWords)for(const id of ['hour','minute'])reveal(id,0);
  reveal('lens-scene',1-phoneFade);
@@ -437,7 +450,7 @@ function frame(now){
  slider.classList.toggle('moving',position>.002);
  slider.style.setProperty('--cover',Math.min(1,position*32));
  slider.style.setProperty('--shine',((t*57)%100)+'%');
- cue(tracks[0],t,percussionAt,13.25,.73*cubicPhase(t,percussionAt,percussionAt+.25)*(1-cubicPhase(t,11.1,13.25)));
+ cue(tracks[0],musicClock,percussionAt,13.25+staticMusicTurn,.73*cubicPhase(musicClock,percussionAt,percussionAt+.25)*(1-cubicPhase(t,11.1,13.25)));
  cue(tracks[1],t,12,impactAt,.52*cubicPhase(t,12,14));
  cue(tracks[4],t,12,impactAt,.34*cubicPhase(t,12,13.5),1.1);
  cue(tracks[2],t,vibrationAt,ringAt,.34);
@@ -448,7 +461,7 @@ function frame(now){
 const slide=el('alarm-track');
 function finishAlarm(){
  if(start===null||returnStart!==null)return;
- returnStart=reelElapsed(performance.now())-leadIn;
+ returnStart=storyTime(reelElapsed(performance.now()));
  slidePosition=1;
  sliderDrag=null;
 }
