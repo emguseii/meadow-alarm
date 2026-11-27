@@ -129,10 +129,10 @@ const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
 let backgrounds,words,ready=false,time=0,previous=-1,saved=0,start=null,drag=null,audio,animationId=0;
 let lastTickTime=-Infinity;
 const duration=33.2;
-const hintUntil=2.15,introLength=5.1,staticMusicTurn=4;
+const hintUntil=2.15,introLength=5.1,staticMusicTurn=5.6;
 const counterStart=7.76,counterEnd=9.35,counterExtra=counterEnd-counterStart;
-// Cut the source immediately after its strong woodblock strike at 13.51 seconds.
-const percussionCut=13.59;
+// Cut the source immediately after its strong woodblock strike at 15.52 seconds.
+const percussionCut=15.60;
 let leadIn=0,onboarding=true,listOpening=false,addedAlarm=null;
 const alarms=[
  {time:1418,days:[0],enabled:true},
@@ -497,8 +497,12 @@ function frame(now){
  const turnProgress=clamp01((musicClock-percussionAt)/staticMusicTurn);
  const turnEnd=musicTravel+720;
  const travelAfterTurn=wrap(1439-turnEnd,1440);
- const remainingProgress=clamp01((1439*spin-musicTravel)/Math.max(1,1439-musicTravel));
- const travel=musicClock<percussionAt?1439*spin:staticTurn?musicTravel+720*turnProgress*(.55+.45*turnProgress):turnEnd+travelAfterTurn*remainingProgress;
+ const detailSeconds=wordHandoffAt-percussionAt+counterExtra;
+ const detailProgress=clamp01((musicClock-percussionAt-staticMusicTurn)/detailSeconds);
+ const entrySpeed=720*1.12/staticMusicTurn;
+ const slope=Math.min(2.5,entrySpeed*detailSeconds/Math.max(1,travelAfterTurn));
+ const easedDetail=detailProgress*(slope+detailProgress*(3-2*slope+detailProgress*(slope-2)));
+ const travel=musicClock<percussionAt?1439*spin:staticTurn?musicTravel+720*turnProgress*(.88+.12*turnProgress):turnEnd+travelAfterTurn*easedDetail;
  const runningTime=t<0?demoTime:t<impactAt?reelAnchor+travel:reelAnchor;
  showWheelHint(leadIn>0&&entry<hintUntil);
  // At the final minute the readout says :29 while the landscape has already arrived at :30.
