@@ -5,7 +5,7 @@
 <title>Alarm · Meadow</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#0a0a0c;color:white;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;overflow:hidden}
+body{margin:0;isolation:isolate;background:#0a0a0c;color:white;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;overflow:hidden}
 #phone{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:393px;height:852px;border-radius:55px;overflow:hidden;background:#121824;isolation:isolate}
 #camera,#land,#land img{position:absolute;inset:0;width:100%;height:100%}
 #camera{transform-origin:50% 41%}
@@ -33,16 +33,55 @@ button{font:400 18px/1.5 inherit;font-family:inherit;font-size:18px;color:white;
 button:active{scale:.96}
 .home{position:absolute;left:124.5px;top:839px;width:144px;height:5px;border-radius:9px;background:#fffa}
 #status{position:fixed;inset:48% 0 auto;text-align:center;pointer-events:none}
+#wide-scene,#dawn-words,#ripples,#alarm-screen{position:fixed;inset:0;pointer-events:none;opacity:0}
+#wide-scene{z-index:-1;overflow:hidden;background:#0a0a0c}
+#wide-photo{position:absolute;max-width:none;transform-origin:50% 70%}
+#birds{position:absolute;left:0;top:41%;width:120px;height:44px;opacity:0}
+#birds img{position:absolute;width:15px;height:auto;filter:brightness(.55);transform-origin:center}
+#birds{width:160px;top:4%}
+#dawn-words{text-align:center}
+#dawn-words img{position:absolute;left:50%;height:auto;display:block;transform:translateX(-50%)}
+#dawn-minute.gold{filter:brightness(0) saturate(100%) invert(86%) sepia(83%) saturate(960%) hue-rotate(337deg)}
+#ripples span{position:absolute;left:50%;top:53%;width:min(52vw,500px);aspect-ratio:1;border:1px solid #fff7;border-radius:50%}
+#alarm-screen{display:grid;place-items:center;background:#09090c}
+#alarm-card{position:absolute;left:50%;top:50%;overflow:hidden;width:393px;height:852px;border-radius:55px;background:#758099;color:white;transform:translate(-50%,-50%) scale(var(--phone-scale,1))}
+#alarm-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
+.phone-top{position:absolute;left:0;top:0;width:393px;height:59px;pointer-events:none}
+#alarm-card{background:transparent}
+#alarm-actions{position:absolute;left:16px;right:16px;bottom:35px;display:grid;gap:11px}
+#snooze,#alarm-track{width:100%;height:98px;border:0;border-radius:49px}
+#snooze{background:transparent;box-shadow:none;backdrop-filter:none}
+#alarm-track{position:relative;touch-action:none;cursor:grab}
+#alarm-track::before{content:"";position:absolute;inset:0;border-radius:inherit;background:#2c2b1f;opacity:var(--cover,0)}
+#alarm-track span{position:absolute;inset:0;display:grid;place-items:center;font-size:24px;background:linear-gradient(100deg,#a1a4a500 35%,#fff8 50%,#a1a4a500 65%);background-size:270% 100%;background-position:var(--shine);background-clip:text;color:transparent}
+#alarm-track.moving span{background-image:linear-gradient(100deg,#85847a 35%,#fff 50%,#85847a 65%)}
+#alarm-thumb{position:absolute;left:0;top:0;width:98px;height:98px;border:1px solid #fff3;border-radius:50%;background:#25251b;display:grid;place-items:center;opacity:var(--cover,0)}
+#alarm-thumb::after{content:"";width:35px;height:35px;border-radius:10px;background:white}
+#phone.detail #dial,#phone.detail .reading,#phone.detail .actions,#phone.detail .home,#phone.detail .phone-top{transition:opacity 130ms}
+#reel-controls{position:fixed;z-index:2;right:14px;bottom:14px;display:flex;gap:6px}
+#reel-controls button{width:auto;min-width:38px;height:34px;padding:0 10px;border-radius:18px;font-size:13px;background:#10131bd9;display:grid;place-items:center}#reel-controls svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 </style>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <filter id="liquid-glass-lens" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
 <feImage id="lens-map" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="field"/>
 <feDisplacementMap in="SourceGraphic" in2="field" scale="14" xChannelSelector="R" yChannelSelector="G"/>
+</filter><filter id="dawn-wind" x="-1%" y="-1%" width="102%" height="102%">
+<feTurbulence type="fractalNoise" baseFrequency=".016 .038" numOctaves="2" seed="9" result="breeze"/>
+<feOffset id="wind-offset" in="breeze" dx="0" dy="0" result="moving-breeze"/>
+<feDisplacementMap id="wind-strength" in="SourceGraphic" in2="moving-breeze" scale="0" xChannelSelector="R" yChannelSelector="G"/>
 </filter></defs></svg>
 <main id="phone" aria-label="Set alarm"><div id="camera"><div id="land"><img id="bg-current" alt=""><img id="bg-next" alt=""></div>
-<div id="ui"><div class="reading" id="hour"><div class="word"></div><span class="unit">hours</span></div><div class="reading" id="minute"><div class="word"></div><span class="unit">minutes</span></div>
+<div id="ui"><img id="phone-topbar" class="phone-top" src="Top Bar 6_30.png" alt=""><div class="reading" id="hour"><div class="word"></div><span class="unit">hours</span></div><div class="reading" id="minute"><div class="word"></div><span class="unit">minutes</span></div>
 <div id="dial" role="slider" tabindex="0" aria-label="Alarm time" aria-valuemin="0" aria-valuemax="1439"><div id="lens" aria-hidden="true"><div id="lens-scene"><img id="lens-current" alt=""><img id="lens-next" alt=""></div></div><div class="lens-glint"></div><div id="knob"></div></div>
-<div class="actions"><button id="cancel">Cancel</button><button id="done">Done</button></div><div class="home"></div></div></div><div id="wake" aria-hidden="true">06:30 — Wake up</div></main><output id="status">Loading…</output>
+<div class="actions"><button id="cancel">Cancel</button><button id="done">Done</button></div><div class="home"></div></div></div></main>
+<div id="wide-scene" aria-hidden="true"><img id="wide-photo" alt=""><div id="birds"></div></div>
+<div id="dawn-words" aria-hidden="true"><img id="dawn-hour" alt=""><img id="dawn-minute" alt=""></div>
+<div id="ripples" aria-hidden="true"><span></span><span></span><span></span></div>
+<div id="alarm-screen" aria-hidden="true" inert><div id="alarm-card">
+<img id="alarm-photo" src="Экран будилника.png" alt="Alarm, 06:30"><img class="phone-top" src="Top Bar 6_30.png" alt="">
+<div id="alarm-actions"><button id="snooze" aria-label="Snooze"></button><div id="alarm-track" role="button" tabindex="0" aria-label="Slide to stop alarm"><span aria-hidden="true">Slide to Stop</span><div id="alarm-thumb"></div></div></div></div></div>
+<nav id="reel-controls" aria-label="Showreel controls"><button id="play" aria-label="Play" title="Play"></button><button id="restart" aria-label="Restart" title="Restart"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11a8 8 0 1 1 2 7M4 4v7h7"/></svg></button><button id="mute" aria-label="Mute" title="Mute" aria-pressed="false"></button></nav>
+<output id="status">Loading…</output>
 <script>
 'use strict';
 const el=id=>document.getElementById(id);
@@ -54,13 +93,23 @@ const wrap=(n,m)=>(n%m+m)%m;
 const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
 let backgrounds,words,ready=false,time=0,previous=-1,saved=0,start=null,drag=null,audio,animationId=0;
 let lastTickTime=-Infinity;
-const alarmAudio=new Audio('./alarm-melody.mp3');
-alarmAudio.loop=true;
-alarmAudio.preload='auto';
-alarmAudio.volume=0;
-let melodyFailed=false,melodyWanted=false,melodyRequest=null;
-alarmAudio.addEventListener('error',()=>{melodyFailed=true});
-
+const duration=32.5;
+const impactAt=23.5,vibrationAt=24.5,ringAt=26.65,autoSlide=29.85,returnAt=30.5;
+const spinAt=2,percussionAt=3.5,detailAt=percussionAt+2;
+const pullBackAt=9.35,wideRevealAt=9.95,wordHandoffAt=10.32;
+let directDone=false;
+let reelAnchor=390,lastFrameTime=-1,returnStart=null,sliderDrag=null,slidePosition=0;
+const alarmTime=390;
+const widePath="meadow-backgrounds/Пейзаж утренний 2.png";
+const tracks=["adinkra_audio-congas-and-woodblock-526722.mp3", "звуки пения птитц.mp3", "vibrotone-for-three-vibration-waves.mp3", "iphone_alarm.mp3", "3d-zvuk-atmosfera-derevni.mp3"].map(path=>{
+ const media=new Audio(path);
+ media.preload='auto';
+ media.volume=0;
+ return {media,active:false};
+});
+let pausedAt=null,muted=false,primed=false,widePhoto;
+const reveal=(id,value)=>{el(id).style.opacity=value};
+const clamp01=x=>Math.min(1,Math.max(0,x));
 function prepareLens(){
  const canvas=document.createElement('canvas');
  const size=279,rim=15,padding=12;
@@ -108,13 +157,13 @@ function layout(full=0,zoom=1,visible=1,landScale=1,pan=0){
 }
 function unlock(){if(!audio)audio=new AudioContext();if(audio.state==='suspended')audio.resume()}
 function tone(freq,length,volume){
- if(!audio)return;const at=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();
+ if(muted||!audio)return;const at=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();
  o.type='sine';o.frequency.value=freq;o.connect(g).connect(audio.destination);
  g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(volume,at+.002);g.gain.exponentialRampToValueAtTime(.0001,at+length);o.start(at);o.stop(at+length+.002)
 }
 function playWoodblockTick(isHour=false){
  const now=performance.now();
- if(!audio||audio.state!=='running'||now-lastTickTime<40)return;
+ if(muted||!audio||audio.state!=='running'||now-lastTickTime<40)return;
  lastTickTime=now;
  const at=audio.currentTime,osc=audio.createOscillator(),filter=audio.createBiquadFilter(),gain=audio.createGain();
  osc.type=isHour?'sine':'triangle';
@@ -144,90 +193,288 @@ function magneticTime(value,speed){
  const pull=(1-ease(Math.abs(distance)/1.35))*(1-ease(speed/.10));
  return value-distance*pull;
 }
-function pauseMelody(){
- alarmAudio.pause();
- alarmAudio.volume=0;
- if(alarmAudio.readyState)alarmAudio.currentTime=0;
+function primeTracks(){
+ if(primed)return;
+ primed=true;
+ for(const track of tracks){
+  const {media}=track;
+  media.volume=0;
+  media.play().then(()=>{if(!track.active){media.pause();media.currentTime=0}}).catch(()=>{});
+ }
 }
-function startMelody(){
- if(melodyFailed||melodyRequest||!alarmAudio.paused)return;
- melodyRequest=alarmAudio.play().then(()=>{
-  if(!melodyWanted)pauseMelody();
- }).catch(error=>{
-  if(error.name!=='AbortError')melodyFailed=true;
- }).finally(()=>{melodyRequest=null});
+function cue(track,t,from,to,volume,offset=0){
+ const active=t>=from&&t<to;
+ const {media}=track;
+ if(active&&!track.active){
+  if(media.readyState)media.currentTime=offset+Math.max(0,t-from);
+  media.play().catch(()=>{});
+ }
+ if(!active&&track.active){media.pause();if(media.readyState)media.currentTime=0}
+ track.active=active;
+ media.volume=active?clamp01(volume):0;
 }
-function updateMelody(t){
- const wanted=t>=15&&t<23.7;
- if(wanted&&!melodyWanted){melodyWanted=true;startMelody()}
- if(!wanted&&melodyWanted){melodyWanted=false;pauseMelody()}
- if(wanted)alarmAudio.volume=.85*cubicPhase(t,15,16)*(1-cubicPhase(t,22.5,23.7));
-}
-function show(value,feedback=false,manual=false){
+let previousLight=-1;
+function show(value,feedback=false,manual=false,light=value){
  time=wrap(Math.round(value),1440);const h=Math.floor(time/60),m=time%60;
- if(time===previous)return;
+ const requestedLight=wrap(Math.round(light),1440);
+ const lighting=time===389||time===390||requestedLight===389||requestedLight===390?360:requestedLight;
+ const lightHour=Math.floor(lighting/60);
+ const bar=el('phone-topbar'),barState=time===389?'29':'30';
+ if(bar.dataset.state!==barState){bar.dataset.state=barState;bar.src='Top Bar 6_'+barState+'.png'}
+ if(time===previous&&lighting===previousLight)return;
  for(const [id,n,unit] of [['hour',h,'hour'],['minute',m,'minute']]){
  const block=el(id),slot=block.firstElementChild;
  if(slot.dataset.number!=String(n)){const img=words[n].cloneNode();img.alt=numberToSlug(n);slot.replaceChildren(img);slot.dataset.number=n;block.lastElementChild.textContent=unit+(n===1?'':'s')}}
- if(Math.floor(previous/60)!==h){
+ if(Math.floor(previousLight/60)!==lightHour){
   for(const prefix of ['bg','lens']){
-   el(prefix+'-current').src=backgrounds[h].src;
-   el(prefix+'-next').src=backgrounds[(h+1)%24].src;
+   el(prefix+'-current').src=backgrounds[lightHour].src;
+   el(prefix+'-next').src=backgrounds[(lightHour+1)%24].src;
   }
  }
- el('bg-next').style.opacity=el('lens-next').style.opacity=m/60;
+ el('bg-next').style.opacity=el('lens-next').style.opacity=(lighting%60)/60;
  const rad=((h%12)*60+m)*.5*Math.PI/180;
  el('knob').style.left=(50+50*Math.sin(rad))+'%';el('knob').style.top=(50-50*Math.cos(rad))+'%';
  el('dial').setAttribute('aria-valuenow',time);el('dial').setAttribute('aria-valuetext',numberToSlug(h)+(h===1?' hour ':' hours ')+numberToSlug(m)+(m===1?' minute':' minutes'));
  if(feedback&&previous>=0){tickBetween(previous,time);
  if(manual)navigator.vibrate?.(4)}
- previous=time
+ previous=time;
+ previousLight=lighting;
 }
 function stop(){
  start=null;
+ el('done').disabled=false;
+ pausedAt=null;
  cancelAnimationFrame(animationId);
+ for(const track of tracks)cue(track,0,1,2,0);
+ for(const id of ['wide-scene','dawn-words','ripples','alarm-screen'])reveal(id,0);
+ reveal('land',1);
+ reveal('lens-scene',1);
+ el('phone').style.background='';
  layout();
- melodyWanted=false;
- pauseMelody();
- el('wake').style.opacity=0;
+ el('phone').style.transform='translate(-50%, -50%)';
+ detailCamera(0);
+ el('camera').style.transformOrigin='';
  el('done').style.transform='';
  el('done').style.filter='';
- el('knob').style.scale='';
+ el('alarm-screen').inert=true;
+ el('alarm-screen').style.pointerEvents='none';
+ setPlay('Play');
 }
 function cubicPhase(t,a,b){
- const x=Math.max(0,Math.min(1,(t-a)/(b-a)));
+ const x=clamp01((t-a)/(b-a));
  return x<.5?4*x**3:1-(-2*x+2)**3/2;
 }
-function easeOutBack(x){
- const offset=x-1;
- return 1+2.70158*offset**3+1.70158*offset**2;
+function paintScenery(t,opening,shake){
+ if(!widePhoto)return;
+ const scale=fit(),phoneHeight=852*scale;
+ const ratio=widePhoto.naturalWidth/widePhoto.naturalHeight;
+ const startHeight=phoneHeight*323/(325*.90);
+ const endHeight=Math.max(innerHeight,innerWidth/ratio);
+ const height=startHeight+(endHeight-startHeight)*opening;
+ const startTop=(innerHeight-phoneHeight)/2-startHeight*15/323;
+ const endTop=(innerHeight-height)/2;
+ Object.assign(el('wide-photo').style,{
+  width:height*ratio+'px',height:height+'px',
+  left:(innerWidth-height*ratio)/2+'px',top:(startTop+(endTop-startTop)*opening)+'px',
+  transform:'translateX('+shake+'px)'
+ });
+ const breeze=cubicPhase(t,12.2,13.5);
+ el('wide-photo').style.filter=breeze?'url(#dawn-wind)':'';
+ el('wind-offset').setAttribute('dx',Math.sin(t*1.15)*32);
+ el('wind-offset').setAttribute('dy',Math.cos(t*.85)*12);
+ el('wind-strength').setAttribute('scale',breeze*5.5);
+ const insetX=(innerWidth-393*scale)/2*(1-opening);
+ const insetY=(innerHeight-phoneHeight)/2*(1-opening);
+ el('wide-scene').style.clipPath='inset('+insetY+'px '+insetX+'px round '+55*scale*(1-opening)+'px)';
+ const flight=clamp01((t-14.8)/6.5);
+ const flock=el('birds'),wordTop=(innerHeight-852*scale)/2+82*scale;
+ reveal('birds',cubicPhase(t,14.8,15.35)*(1-cubicPhase(t,20.75,21.3)));
+ flock.style.top=Math.max(0,wordTop-65)+'px';
+ flock.style.transform='translate('+(-175+(innerWidth+350)*flight)+'px,'+(5*Math.sin(flight*Math.PI*2)-12*flight)+'px) scale('+Math.min(1,wordTop/58)+')';
+ [...flock.children].forEach((bird,i)=>{
+  const glide=.55+.45*Math.sin(t*2+i);
+  const flap=Math.sin(t*(14+i*1.8)+i*2.1)*glide;
+  bird.style.transform='translateY('+(Math.sin(t*2.5+i)*2.5)+'px) rotate('+(flap*3)+'deg) scaleY('+(.85+.13*flap)+')';
+ });
+}
+function detailCamera(t){
+ const stage=el('phone'),scale=fit();
+ const follow=cubicPhase(t,detailAt,detailAt+.38)*(1-cubicPhase(t,7.62,7.76));
+ const counter=t>=7.76?1-cubicPhase(t,pullBackAt,wordHandoffAt):0;
+ const charge=cubicPhase(t,8.1,pullBackAt)*counter;
+ const zoom=1+follow*1.5+counter*.72+charge*.78;
+ const angle=(time%720)*Math.PI/360;
+ const x=-Math.sin(angle)*139.5*follow*.66;
+ const focusY=(526.7-426-Math.cos(angle)*139.5)*follow;
+ const y=-focusY+252*counter;
+ stage.style.transform='translate(-50%,-50%) translate('+x*scale*zoom+'px,'+y*scale*zoom+'px) scale('+zoom+')';
+ stage.classList.toggle('detail',follow>0||counter>0);
+ for(const id of ['hour','minute'])el(id).style.opacity=.8*(1-follow);
+ reveal('dial',1-counter);
+ reveal('phone-topbar',1-Math.max(follow,counter));
+ el('phone').querySelector('.actions').style.opacity=1-Math.max(follow,counter);
+}
+function setControl(id,label,path){
+ const button=el(id);
+ button.setAttribute('aria-label',label);
+ button.title=label;
+ button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+path+'"/></svg>';
+}
+function setPlay(label){
+ setControl('play',label,label==='Pause'?'M9 5v14M15 5v14':'m8 5 12 7-12 7z');
+}
+function setMute(){
+ const speaker='M4 9h4l5-4v14l-5-4H4z';
+ setControl('mute',muted?'Unmute':'Mute',speaker+(muted?'m4 4 5 6m0-6-5 6':'m3-3q4 3 0 6m2-8q6 5 0 10'));
 }
 function frame(now){
  if(start===null)return;
- const t=((now-start)/1000)%24;
- const travelBack=cubicPhase(t,8,12.6);
- const settle=Math.max(0,Math.min(1,(t-12.6)/.4));
- const value=t<8?870*cubicPhase(t,2,8):t<13?870-476*travelBack-4*easeOutBack(settle):390*(1-cubicPhase(t,22.5,24));
- show(value,t>=2&&t<13);
- const closeup=cubicPhase(t,8,13)*(1-cubicPhase(t,13,15));
- const landscape=cubicPhase(t,15,20)*(1-cubicPhase(t,22.5,24));
- const full=cubicPhase(t,15,18)*(1-cubicPhase(t,22.5,24));
- const visible=1-cubicPhase(t,15,17)*(1-cubicPhase(t,22.5,24));
- const press=cubicPhase(t,13.9,14.2)*(1-cubicPhase(t,14.2,14.75));
- layout(full,1+.35*closeup,visible,1+.07*landscape,80*closeup);
+ const t=wrap((now-start)/1000,duration);
+ if(t<lastFrameTime){directDone=false;returnStart=null;slidePosition=0;sliderDrag=null}
+ const returning=returnStart??returnAt;
+ const spin=cubicPhase(t,spinAt,wordHandoffAt);
+ const runningTime=t<impactAt?reelAnchor+1439*spin:reelAnchor;
+ // At the final minute the readout says :29 while the landscape has already arrived at :30.
+ const heldLight=reelAnchor===alarmTime?360:reelAnchor;
+ const light=t>=spinAt&&t<10.15?runningTime:heldLight;
+ const wheelTicks=t>=spinAt&&t<percussionAt;
+ show(runningTime,wheelTicks,false,light);
+ const opening=cubicPhase(t,wideRevealAt,11.55);
+ const reset=cubicPhase(t,returning,returning+1.3);
+ const alarm=cubicPhase(t,ringAt,ringAt+1)*(1-reset);
+ const dissipation=cubicPhase(t,ringAt,ringAt+1);
+ const phoneFade=cubicPhase(t,wideRevealAt,10.56)*(1-reset);
+ reveal('land',1-phoneFade);
+ el('phone').style.background=phoneFade?'transparent':'';
+ const dissolveUI=cubicPhase(t,10.12,11.1);
+ layout(0,1,1-dissolveUI*(1-reset));
+ detailCamera(t);
+ const showWideWords=t>=wordHandoffAt&&reset===0;
+ if(showWideWords)for(const id of ['hour','minute'])reveal(id,0);
+ reveal('lens-scene',1-phoneFade);
+ const press=directDone?1-cubicPhase(t,0,.27):cubicPhase(t,.65,.85)*(1-cubicPhase(t,.85,1.28));
  el('done').style.transform='scale('+(1-.06*press)+')';
- el('done').style.filter='brightness('+(1+.6*press)+')';
- el('knob').style.scale=t<2?1+.15*Math.sin(Math.PI*t/2)**2:1;
- const wake=cubicPhase(t,20,20.55)*(1-cubicPhase(t,22.5,23.05));
- const pulse=.5+.5*Math.sin((t-20)*Math.PI*2);
- el('wake').style.opacity=wake;
- el('wake').style.boxShadow='0 0 '+(24+14*pulse)+'px rgba(255,255,255,'+(.13+.09*pulse)+')';
- updateMelody(t);
+ el('done').style.filter='brightness('+(1+.55*press)+')';
+ if(!directDone&&lastFrameTime<.78&&t>=.78&&t<1.3)tone(660,.12,.055);
+ const scenicFade=(t>=wideRevealAt?1:0)*(1-dissipation);
+ reveal('wide-scene',widePhoto?scenicFade:0);
+ const vibration=t-vibrationAt;
+ let shake=0;
+ [...el('ripples').children].forEach((ring,i)=>{
+  const wave=clamp01((vibration-i*.64)/.88);
+  const pulse=Math.sin(Math.PI*wave);
+  ring.style.opacity=pulse*.55;
+  ring.style.transform='translate(-50%,-50%) scale('+(.22+wave*1.2)+')';
+  shake+=pulse*Math.sin(vibration*78)*2;
+ });
+ reveal('ripples',1-dissipation);
+ paintScenery(t,opening,shake);
+ const grow=cubicPhase(t,wordHandoffAt,10.78),scale=fit(),phoneTop=(innerHeight-852*scale)/2;
+ const baseWidth=393*scale;
+ const largeWidth=Math.max(baseWidth,Math.min(innerWidth*.92,innerHeight*.82,baseWidth*1.58));
+ const wordWidth=baseWidth+(largeWidth-baseWidth)*grow;
+ reveal('dawn-words',(showWideWords?1:0)*(.8+.2*grow)*(1-cubicPhase(t,ringAt,ringAt+.8)));
+ // Compensate for the SVG's internal top padding so the visible glyph stays pinned.
+ const sixPadding=reelAnchor===alarmTime?8.12:0;
+ const extraScale=(wordWidth-baseWidth)/393;
+ Object.assign(el('dawn-hour').style,{width:wordWidth+'px',top:(phoneTop+82*scale-sixPadding*extraScale)+'px'});
+ Object.assign(el('dawn-minute').style,{width:wordWidth+'px',top:(phoneTop+209*scale-.12*extraScale)+'px'});
+ const sceneTime=wrap(reelAnchor-(t<impactAt?1:0),1440);
+ el('dawn-hour').src=words[Math.floor(sceneTime/60)].src;
+ const lower=sceneTime%60,minute=el('dawn-minute');
+ if(minute.dataset.value!==String(lower)){minute.src=words[lower].src;minute.dataset.value=lower}
+ minute.classList.toggle('gold',t>=impactAt);
+ if(lastFrameTime<impactAt&&t>=impactAt&&t<impactAt+.15){lastTickTime=-Infinity;playWoodblockTick()}
+ reveal('alarm-screen',alarm);
+ const canSlide=alarm>.62&&returnStart===null;
+ el('alarm-screen').inert=!canSlide;
+ el('alarm-screen').style.pointerEvents=canSlide?'auto':'none';
+ el('alarm-screen').style.filter='blur('+((1-alarm)*12)+'px)';
+ el('alarm-card').style.setProperty('--phone-scale',scale);
+ el('alarm-photo').style.transform='translateX('+(Math.sin(t*76)*alarm*1.8)+'px)';
+ const slider=el('alarm-track');
+ const position=sliderDrag||returnStart!==null?slidePosition:Math.max(slidePosition,cubicPhase(t,autoSlide,returnAt));
+ el('alarm-thumb').style.transform='translateX('+((slider.clientWidth-98)*position)+'px)';
+ slider.classList.toggle('moving',position>.002);
+ slider.style.setProperty('--cover',Math.min(1,position*32));
+ slider.style.setProperty('--shine',((t*57)%100)+'%');
+ cue(tracks[0],t,percussionAt,13.25,.73*cubicPhase(t,percussionAt,percussionAt+.25)*(1-cubicPhase(t,11.1,13.25)));
+ cue(tracks[1],t,12,impactAt,.52*cubicPhase(t,12,14));
+ cue(tracks[4],t,12,impactAt,.34*cubicPhase(t,12,13.5),1.1);
+ cue(tracks[2],t,vibrationAt,ringAt,.34);
+ cue(tracks[3],t,ringAt,returning+.3,.9*(1-cubicPhase(t,returning,returning+.3)));
+ lastFrameTime=t;
  animationId=requestAnimationFrame(frame);
 }
+const slide=el('alarm-track');
+function finishAlarm(){
+ if(start===null||returnStart!==null)return;
+ returnStart=wrap((performance.now()-start)/1000,duration);
+ slidePosition=1;
+ sliderDrag=null;
+}
+slide.onpointerdown=e=>{
+ if(start===null||e.button!==0)return;
+ sliderDrag={id:e.pointerId,x:e.clientX,base:slidePosition};
+ slide.setPointerCapture(e.pointerId);
+};
+slide.onpointermove=e=>{
+ if(sliderDrag?.id!==e.pointerId)return;
+ slidePosition=clamp01(sliderDrag.base+(e.clientX-sliderDrag.x)/((slide.clientWidth-98)*fit()));
+ if(slidePosition>.87)finishAlarm();
+};
+slide.onlostpointercapture=()=>{sliderDrag=null};
+slide.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();finishAlarm()}};
+el('snooze').onclick=finishAlarm;
+
+function restartReel(selected=alarmTime,clicked=false){
+ if(!ready)return;
+ unlock();
+ stop();
+ // Done confirms once per run. Pausing keeps it locked; stopping resets it.
+ el('done').disabled=true;
+ primeTracks();
+ reelAnchor=saved=selected;
+ returnStart=sliderDrag=null;
+ slidePosition=0;lastFrameTime=-1;
+ directDone=clicked;
+ if(clicked)tone(660,.12,.055);
+ show(selected,false,false,selected===alarmTime?360:selected);
+ setPlay('Pause');
+ document.documentElement.style.setProperty('--play-state','running');
+ start=performance.now();
+ frame(start);
+}
+function toggleReel(){
+ if(!ready)return;
+ if(start!==null){
+  pausedAt=wrap((performance.now()-start)/1000,duration);
+  start=null;
+  cancelAnimationFrame(animationId);
+  for(const {media} of tracks) media.pause();
+  document.documentElement.style.setProperty('--play-state','paused');
+  setPlay('Resume');
+ }else if(pausedAt===0){restartReel(reelAnchor)}
+ else if(pausedAt!==null){
+  start=performance.now()-pausedAt*1000;
+  pausedAt=null;
+  for(const track of tracks)if(track.active)track.media.play().catch(()=>{});
+  document.documentElement.style.setProperty('--play-state','running');
+  setPlay('Pause');
+  frame(performance.now());
+ }else restartReel();
+}
+el('play').onclick=toggleReel;
+el('restart').onclick=()=>restartReel();
+el('mute').onclick=()=>{
+ muted=!muted;
+ for(const {media} of tracks)media.muted=muted;
+ setMute();
+ el('mute').setAttribute('aria-pressed',muted);
+};
 function angle(e){const r=el('dial').getBoundingClientRect();return Math.atan2(e.clientX-r.left-r.width/2,r.top+r.height/2-e.clientY)*180/Math.PI}
 const dial=el('dial');
-dial.onpointerdown=e=>{if(!ready||drag||e.button!==0)return;unlock();stop();dial.setPointerCapture(e.pointerId);const a=angle(e);
+dial.onpointerdown=e=>{if(!ready||drag||el('done').disabled||e.button!==0)return;unlock();stop();dial.setPointerCapture(e.pointerId);const a=angle(e);
  const offset=wrap(a-time*.5+180,360)-180;drag={id:e.pointerId,a,value:time+offset*2,stamp:e.timeStamp};show(drag.value,false)};
 dial.onpointermove=e=>{
  if(!drag||drag.id!==e.pointerId)return;
@@ -239,11 +486,32 @@ dial.onpointermove=e=>{
  show(magneticTime(drag.value,speed),true,true);
 };
 dial.onlostpointercapture=()=>drag=null;
-window.onkeydown=e=>{if(!ready)return;if(e.code==='Space'){e.preventDefault();if(e.repeat)return;unlock();if(start!==null){stop();return}el('status').hidden=true;lastTickTime=-Infinity;startMelody();start=performance.now();frame(start)}
+window.onkeydown=e=>{if(!ready)return;if(e.code==='Space'&&!(e.target instanceof HTMLButtonElement)){e.preventDefault();if(!e.repeat)toggleReel()}
  else if(e.key==='Escape'){stop();show(saved)}
- else if(document.activeElement===dial&&['ArrowLeft','ArrowDown','ArrowUp','ArrowRight'].includes(e.key)){e.preventDefault();unlock();stop();show(time+(['ArrowRight','ArrowUp'].includes(e.key)?1:-1),true,true)}};
-el('cancel').onclick=()=>{if(ready){stop();show(saved)}};el('done').onclick=()=>{if(ready){unlock();stop();saved=time;tone(660,.12,.055)}};
+ else if(!el('done').disabled&&document.activeElement===dial&&['ArrowLeft','ArrowDown','ArrowUp','ArrowRight'].includes(e.key)){e.preventDefault();unlock();stop();show(time+(['ArrowRight','ArrowUp'].includes(e.key)?1:-1),true,true)}};
+el('cancel').onclick=()=>{
+ if(!ready)return;
+ stop();
+ saved=reelAnchor;
+ returnStart=sliderDrag=null;
+ slidePosition=0;lastFrameTime=-1;
+ show(reelAnchor,false,false,reelAnchor===alarmTime?360:reelAnchor);
+ pausedAt=0;
+ setPlay('Resume');
+};
+el('done').onclick=()=>{if(ready&&!el('done').disabled)restartReel(time,true)};
 prepareLens();
+setPlay('Play');setMute();
 window.onresize=()=>{if(start===null)layout()};layout();el('ui').hidden=true;
-(async()=>{try{[backgrounds,words]=await Promise.all([sequence(24,i=>loadImage('meadow-backgrounds/'+String(i).padStart(2,'0')+'-00.png')),sequence(60,i=>loadImage('fonts-svg/EN/'+numberToSlug(i)+'.svg'))]);show(0);ready=true;el('status').hidden=true;el('ui').hidden=false}catch{el('status').textContent='Could not load local alarm assets.'}})();
+(async()=>{try{[backgrounds,words]=await Promise.all([sequence(24,i=>loadImage('meadow-backgrounds/'+String(i).padStart(2,'0')+'-00.png')),sequence(60,i=>loadImage('fonts-svg/EN/'+numberToSlug(i)+'.svg'))]);widePhoto=await loadImage(widePath).catch(()=>null);
+ if(widePhoto)el('wide-photo').src=widePhoto.src;
+
+ for(const [x,y,size,opacity] of [[0,17,12,.65],[26,8,15,.78],[45,24,10,.56],[75,15,12,.67],[99,2,15,.76],[126,11,13,.7]]){
+  const bird=new Image();
+  bird.src='dawn-starling.webp';
+  Object.assign(bird.style,{left:x+'px',top:y+'px',width:size+'px',opacity});
+  el('birds').append(bird);
+ }
+ el('dawn-hour').src=words[6].src;
+ saved=alarmTime;show(alarmTime,false,false,360);ready=true;el('status').hidden=true;el('ui').hidden=false}catch{el('status').textContent='Could not load local alarm assets.'}})();
 </script></html>
