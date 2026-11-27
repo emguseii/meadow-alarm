@@ -26,9 +26,9 @@ body{margin:0;isolation:isolate;background:#0a0a0c;color:white;font-family:-appl
 .lens-glint::after{content:"";position:absolute;inset:0;border-radius:inherit;background:conic-gradient(from -45deg,#dfedef80,#b8f5ff38,transparent,#ffa8ea32,#f8deaf48,transparent,#dfedef80);mask-image:radial-gradient(circle closest-side,transparent 97.8%,#000 99.6%,transparent 100%)}
 #wake{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:.7em 1.4em;white-space:nowrap;font-size:clamp(20px,3vw,34px);font-weight:400;letter-spacing:.02em;color:#fff;background:#0e191c4d;border:1px solid #ffffff57;box-shadow:0 0 32px #fff2;border-radius:100px;text-shadow:0 1px 9px #0008;pointer-events:none;opacity:0}
 #dial:active{cursor:grabbing}
-#wheel-hint{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;pointer-events:none;opacity:0;background:rgb(255 255 255 / .10);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1.2px #fff9;text-align:center;font-size:18px;line-height:1.22;white-space:pre-line;transition:opacity .2s}
+#wheel-hint{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;pointer-events:none;opacity:0;background:transparent;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);text-align:center;font-size:18px;line-height:1.22;white-space:pre-line;transition:opacity .2s}
 #wheel-hint.visible{opacity:1}
-#dial:has(#wheel-hint.visible) .lens-glint{background:transparent}
+
 @media(prefers-reduced-motion:reduce){#wheel-hint{transition:none}}
 
 #knob{position:absolute;width:42.247px;height:42.247px;transform:translate(-50%,-50%);background:#fff6;border:3.775px solid #fff3;border-radius:50%;backdrop-filter:blur(12px);box-shadow:0 0 4.22px #0003,inset 1px 1px 4px #fff3}
@@ -40,22 +40,21 @@ button:active{scale:.96}
 #status{position:fixed;inset:48% 0 auto;text-align:center;pointer-events:none}
 #wide-scene,#dawn-words,#ripples,#alarm-screen{position:fixed;inset:0;pointer-events:none;opacity:0}
 #wide-scene{z-index:-1;overflow:hidden;background:#0a0a0c}
-#wide-extension{position:absolute;inset:0;width:100%;height:100%}
-#wide-photo,#wide-next{position:absolute;max-width:none;object-fit:cover;transform-origin:50% 70%}
+#wide-photo{position:absolute;max-width:none;object-fit:cover;transform-origin:50% 70%}
 #birds{position:fixed;left:0;top:0;width:160px;height:44px;opacity:0;pointer-events:none;transform-origin:top left}
 #birds img{position:absolute;width:15px;height:auto;filter:brightness(.55);transform-origin:center}
 #dawn-words{text-align:center}
 #dawn-words img{position:absolute;left:50%;height:auto;display:block;transform:translateX(-50%)}
-#dawn-minute.gold{filter:brightness(0) saturate(100%) invert(86%) sepia(83%) saturate(960%) hue-rotate(337deg)}
+
 #ripples span{position:absolute;left:50%;top:53%;width:min(52vw,500px);aspect-ratio:1;border:1px solid #fff7;border-radius:50%}
 #alarm-screen{display:grid;place-items:center;background:#09090c}
 #alarm-card{position:absolute;left:50%;top:50%;overflow:hidden;width:393px;height:852px;border-radius:55px;background:#758099;color:white;transform:translate(-50%,-50%) scale(var(--phone-scale,1))}
 #alarm-background{position:absolute;inset:0;filter:blur(9px) brightness(.86);transform:scale(1.055)}
 #alarm-background img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-#alarm-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;clip-path:inset(13px 23px 811px 279px);pointer-events:none}
+
 #alarm-title{position:absolute;left:0;right:0;top:103px;text-align:center;font-size:26px;font-weight:650}
-#alarm-words{position:absolute;top:176px;width:100%;display:grid;gap:10px}
-#alarm-words [role=img]{position:relative;left:50%;transform:translateX(-50%);width:570px;height:110px;background:#f5ff00;mask-size:100% 100%;mask-position:center;mask-repeat:no-repeat}
+#alarm-words{position:absolute;top:176px;width:100%;display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:120px;gap:10px}
+#alarm-words img{display:block;position:relative;left:50%;transform:translateX(-50%);width:var(--yellow-width,618px);height:auto;align-self:start}
 #alarm-card::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 3px #fff5;pointer-events:none}
 .phone-top{position:absolute;left:0;top:0;width:393px;height:59px;pointer-events:none}
 #alarm-card{background:transparent}
@@ -69,7 +68,12 @@ button:active{scale:.96}
 #alarm-thumb::after{content:"";width:35px;height:35px;border-radius:10px;background:white}
 #phone.detail #dial,#phone.detail .reading,#phone.detail .actions,#phone.detail .home,#phone.detail .phone-top{transition:opacity 130ms}
 #reel-controls{position:fixed;z-index:2;right:14px;bottom:14px;display:flex;gap:6px}
-#reel-controls button{width:auto;min-width:38px;height:34px;padding:0 10px;border-radius:18px;font-size:13px;background:#10131bd9;display:grid;place-items:center}#reel-controls svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#reel-controls button{width:auto;min-width:38px;height:34px;padding:0 10px;border-radius:18px;font-size:13px;background:#10131bd9;display:grid;place-items:center}#reel-controls svg{width:20px;height:20px;fill:currentColor}
+#reel-controls[hidden]{display:none}
+.idle-shine{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;fill:none;stroke:#fffc;stroke-width:2;stroke-linecap:round;stroke-dasharray:40 560;stroke-dashoffset:0;filter:drop-shadow(0 0 3px #fff8)}
+#phone.glint .idle-shine{animation:idle-glint 2.3s ease-in-out infinite}
+@keyframes idle-glint{0%,100%{opacity:0}14%,55%{opacity:.72} 75%{opacity:0;stroke-dashoffset:-600}}
+@media(prefers-reduced-motion:reduce){#phone.glint .idle-shine{animation:none;opacity:.35}}
 #alarm-list{position:fixed;left:50%;top:50%;width:393px;height:852px;transform:translate(-50%,-50%) scale(var(--list-scale,1));border-radius:55px;background:#212121;box-shadow:inset 0 0 0 4px #fff4,0 0 0 4px #fff2;overflow:hidden;z-index:1}
 #alarm-list h1{position:absolute;left:16px;top:73px;margin:0;font-size:24px}
 #alarm-list .phone-top{margin-top:3px}
@@ -107,17 +111,17 @@ button:active{scale:.96}
 </filter></defs></svg>
 <main id="phone" aria-label="Set alarm"><div id="camera"><div id="land"><img id="bg-current" alt=""><img id="bg-next" alt=""></div>
 <div id="ui"><img id="phone-topbar" class="phone-top" src="Top Bar 6_30.png" alt=""><div class="reading" id="hour"><div class="word"></div><span class="unit">hours</span></div><div class="reading" id="minute"><div class="word"></div><span class="unit">minutes</span></div>
-<div id="dial" role="slider" tabindex="0" aria-label="Alarm time" aria-valuemin="0" aria-valuemax="1439"><div id="lens" aria-hidden="true"><div id="lens-scene"><img id="lens-current" alt=""><img id="lens-next" alt=""></div></div><div class="lens-glint"></div><div id="wheel-hint" class="visible" aria-hidden="true">Rotate the circle
-to set the time</div><div id="knob"></div></div>
-<div class="actions"><button id="cancel">Cancel</button><button id="done">Done</button></div><div class="home"></div></div></div></main>
-<div id="wide-scene" aria-hidden="true"><img id="wide-photo" alt=""><img id="wide-next" alt=""><canvas id="wide-extension" hidden></canvas></div>
+<div id="dial" role="slider" tabindex="0" aria-label="Alarm time" aria-valuemin="0" aria-valuemax="1439"><div id="lens" aria-hidden="true"><div id="lens-scene"><img id="lens-current" alt=""><img id="lens-next" alt=""></div></div><div id="wheel-hint" class="visible" aria-hidden="true">Rotate the circle
+to set the time</div><div class="lens-glint"></div><svg class="idle-shine" viewBox="0 0 279 279" aria-hidden="true"><circle cx="139.5" cy="139.5" r="138" pathLength="600"/></svg><div id="knob"></div></div>
+<div class="actions"><button id="cancel">Cancel</button><button id="done">Done</button></div><div class="home"></div></div></div><svg class="idle-shine" viewBox="0 0 393 852" preserveAspectRatio="none" aria-hidden="true"><rect x="1.5" y="1.5" width="390" height="849" rx="53.5" pathLength="600"/></svg></main>
+<div id="wide-scene" aria-hidden="true"><img id="wide-photo" alt=""></div>
 <div id="dawn-words" aria-hidden="true"><img id="dawn-hour" alt=""><img id="dawn-minute" alt=""></div>
 <div id="birds" aria-hidden="true"></div>
 <div id="ripples" aria-hidden="true"><span></span><span></span><span></span></div>
 <div id="alarm-screen" aria-hidden="true" inert><div id="alarm-card">
 <div id="alarm-background"><img id="alarm-current" alt=""><img id="alarm-next" alt=""></div>
-<img id="alarm-photo" src="meadow-backgrounds/alarm-screen.png" alt="">
-<div id="alarm-title">◷ Alarm</div><div id="alarm-words"><div id="alarm-hour" role="img"></div><div id="alarm-minute" role="img"></div></div>
+<img class="phone-top" src="Top Bar 6_30.png" alt="">
+<div id="alarm-title">◷ Alarm</div><div id="alarm-words"><img id="alarm-hour" alt=""><img id="alarm-minute" alt=""></div>
 <div id="alarm-actions"><button id="snooze">Snooze</button><div id="alarm-track" role="button" tabindex="0" aria-label="Slide to stop alarm"><span aria-hidden="true">Slide to Stop</span><div id="alarm-thumb"></div></div></div></div></div>
 <section id="alarm-list" aria-label="Будильники"><img class="phone-top" src="Top Bar 6_29.png" alt="">
 <h1>Будильники</h1><button id="add-alarm" aria-label="Добавить будильник"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M15 3V27M3 15H27"/></svg></button>
@@ -133,7 +137,7 @@ async function loadImage(src){const img=new Image();img.src=src;await img.decode
 const sequence=(n,fn)=>Promise.all(Array.from({length:n},(_,i)=>fn(i)));
 const wrap=(n,m)=>(n%m+m)%m;
 const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
-let backgrounds,words,ready=false,time=0,previous=-1,saved=0,start=null,drag=null,audio,animationId=0;
+let backgrounds,words,yellowWords,ready=false,time=0,previous=-1,saved=0,start=null,drag=null,audio,animationId=0;
 let lastTickTime=-Infinity;
 const duration=33.2;
 const hintUntil=2.15,introLength=5.1,staticMusicTurn=5.6;
@@ -211,7 +215,7 @@ el('add-alarm').onclick=()=>{
   paintList(1-cubicPhase(t,.13,.30),cubicPhase(t,0,.09)*(1-cubicPhase(t,.09,.28)));
   reveal('phone',cubicPhase(t,.30,.49));
   if(t<.49)requestAnimationFrame(animate);
-  else{listOpening=false;onboarding=true;showWheelHint(true);el('dial').focus({preventScroll:true})}
+  else{listOpening=false;onboarding=true;showWheelHint(true);setIdleGlow(true);el('dial').focus({preventScroll:true})}
  }
  requestAnimationFrame(animate);
 };
@@ -416,84 +420,38 @@ function cubicPhase(t,a,b){
  const x=clamp01((t-a)/(b-a));
  return x<.5?4*x**3:1-(-2*x+2)**3/2;
 }
-let scenePhoto,sceneNext,sceneBlend,sceneSize="";
 function setWakeAssets(value){
  const h=Math.floor(value/60),m=value%60;
- const isDefault=value===alarmTime;
- const current=backgrounds[h],next=backgrounds[(h+1)%24],blend=isDefault?0:m/60;
  for(const [id,n] of [['alarm-hour',h],['alarm-minute',m]]){
-  el(id).style.maskImage='url("'+words[n].src+'")';
-  el(id).setAttribute('aria-label',numberToSlug(n));
+  const word=el(id);
+  word.src=yellowWords[n].src;
+  word.alt=numberToSlug(n);
+  // The three widest exports need a little more room inside the phone.
+  const paintedWidth={23:369,27:389,28:364}[n];
+  word.style.setProperty('--yellow-width',(paintedWidth?Math.min(618,618*357/paintedWidth):618)+'px');
  }
- el('alarm-current').src=current.src;
- el('alarm-next').src=next.src;
- reveal('alarm-next',blend);
- scenePhoto=isDefault?widePhoto:current;
- sceneNext=next;sceneBlend=blend;sceneSize='';
- el('wide-extension').hidden=isDefault;
- for(const id of ['wide-photo','wide-next'])el(id).hidden=!isDefault;
- el('wide-photo').src=scenePhoto.src;
- el('wide-next').src=next.src;
- reveal('wide-next',blend);
-}
-function drawWideExtension(){
- const size=innerWidth+'×'+innerHeight;
- if(sceneSize===size)return;
- sceneSize=size;
- const canvas=el('wide-extension');
- const resolution=Math.min(devicePixelRatio||1,2000/Math.max(innerWidth,innerHeight));
- const width=canvas.width=Math.round(innerWidth*resolution);
- const height=canvas.height=Math.round(innerHeight*resolution);
- const ctx=canvas.getContext('2d');
- const phoneWidth=height*393/852,left=(width-phoneWidth)/2,right=left+phoneWidth;
- function paint(image,opacity){
-  if(!opacity)return;
-  ctx.globalAlpha=opacity;
-  const iw=image.naturalWidth,ih=image.naturalHeight;
-  const scale=Math.max(phoneWidth/iw,height/ih),sw=phoneWidth/scale,sh=height/scale;
-  const sx=(iw-sw)/2,sy=(ih-sh)/2;
-  // Continue the outer edges into the wings. The original center keeps its exact phone crop.
-  for(const [edge,space,direction,sourceEdge,available] of [
-   [left,left,-1,sx,sx],[right,width-right,1,sx+sw,iw-sx-sw]
-  ]){
-   if(space<=0)continue;
-   const extent=Math.max(2,available);
-   for(let px=0;px<Math.round(space);px++){
-    const u=px/space;
-    const dx=extent*(1-(1-u)**2);
-    const column=Math.max(0,Math.min(iw-1,sourceEdge+direction*dx));
-    ctx.drawImage(image,column,sy,1,sh,Math.round(edge)+(direction<0?-px-1:px),0,1,height);
-   }
-  }
-  ctx.drawImage(image,sx,sy,sw,sh,left,0,phoneWidth,height);
- }
- paint(scenePhoto,1);
- paint(sceneNext,sceneBlend);
- ctx.globalAlpha=1;
+ el('alarm-current').src=backgrounds[6].src;
+ reveal('alarm-next',0);
+ el('wide-photo').src=widePhoto.src;
 }
 function paintScenery(t,opening,shake){
- if(!scenePhoto)return;
- const originalWide=reelAnchor===alarmTime&&scenePhoto!==backgrounds[6];
+ if(!widePhoto)return;
+ const originalWide=widePhoto!==backgrounds[6];
  const scale=fit()*holdZoom(),phoneHeight=852*scale;
- const ratio=scenePhoto.naturalWidth/scenePhoto.naturalHeight;
+ const ratio=widePhoto.naturalWidth/widePhoto.naturalHeight;
  const startHeight=originalWide?phoneHeight*323/(325*.90):phoneHeight;
  const endHeight=Math.max(innerHeight,innerWidth/ratio);
  const height=startHeight+(endHeight-startHeight)*opening;
  const cropOffset=originalWide?startHeight*15/323:0;
  const startTop=(innerHeight-phoneHeight)/2-cropOffset;
  const endTop=(innerHeight-height)/2;
- for(const id of ['wide-photo','wide-next'])Object.assign(el(id).style,{
+ Object.assign(el('wide-photo').style,{
   width:height*ratio+'px',height:height+'px',
   left:(innerWidth-height*ratio)/2+'px',top:(startTop+(endTop-startTop)*opening)+'px',
   transform:'translateX('+shake+'px)'
  });
  const breeze=cubicPhase(t,12.2,13.5);
- if(reelAnchor!==alarmTime&&t>=wideRevealAt){
-  drawWideExtension();
-  el('wide-extension').style.transform='translateX('+shake+'px)';
-  el('wide-extension').style.filter=breeze?'url(#dawn-wind)':'';
- }
- for(const id of ['wide-photo','wide-next'])el(id).style.filter=breeze?'url(#dawn-wind)':'';
+ el('wide-photo').style.filter=breeze?'url(#dawn-wind)':'';
  el('wind-offset').setAttribute('dx',Math.sin(t*1.15)*32);
  el('wind-offset').setAttribute('dy',Math.cos(t*.85)*12);
  el('wind-strength').setAttribute('scale',breeze*5.5);
@@ -535,19 +493,31 @@ function detailCamera(t){
  reveal('phone-topbar',1-Math.max(follow,counter));
  el('phone').querySelector('.actions').style.opacity=1-Math.max(follow,counter);
 }
-function setControl(id,label,path){
+const controlIcons={
+ "pause": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><g transform=\"translate(4 3)\"><path d=\"M 4 0 C 5.1046 0 6 0.8954 6 2 L 6 16 C 6 17.1046 5.1046 18 4 18 L 2 18 C 0.8954 18 0 17.1046 0 16 L 0 2 C 0 0.8954 0.8954 0 2 0 L 4 0 Z\"/><path d=\"M 14 0 C 15.1046 0 16 0.8954 16 2 L 16 16 C 16 17.1046 15.1046 18 14 18 L 12 18 C 10.8954 18 10 17.1046 10 16 L 10 2 C 10 0.8954 10.8954 0 12 0 L 14 0 Z\"/></g></svg>",
+ "play": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><g transform=\"translate(6 3)\"><path d=\"M 14.8638 6.9938 C 16.3787 7.8717 16.3787 10.1283 14.8638 11.0062 L 3.3064 17.7037 C 1.8258 18.5617 0 17.4539 0 15.6974 L 0 2.3026 C 0 0.5461 1.8258 -0.5617 3.3064 0.2963 L 14.8638 6.9938 Z\"/></g></svg>",
+ "restart": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><g transform=\"translate(3 3)\"><path d=\"M 1.1895 9.792 C 1.8567 9.6158 2.5403 10.0134 2.7168 10.6807 C 3.4526 13.4624 5.9693 15.5008 8.9463 15.501 C 10.9576 15.5009 12.7584 14.5705 13.9424 13.1084 L 12.4941 13.1084 C 11.8039 13.1084 11.2442 12.5486 11.2441 11.8584 C 11.2441 11.1681 11.8038 10.6084 12.4941 10.6084 L 16.75 10.6084 C 17.4402 10.6086 18 11.1681 18 11.8584 L 18 16.1445 C 17.9998 16.8346 17.4401 17.3944 16.75 17.3945 C 16.0598 17.3945 15.5002 16.8347 15.5 16.1445 L 15.5 15.125 C 13.8681 16.8917 11.5382 18.0009 8.9463 18.001 C 4.7959 18.0008 1.3157 15.1598 0.2998 11.3193 C 0.1237 10.6521 0.5222 9.9685 1.1895 9.792 Z\"/><path d=\"M 9.0537 0 C 13.2038 0.0003 16.6832 2.8405 17.6992 6.6807 C 17.8756 7.3479 17.4777 8.0323 16.8105 8.209 C 16.1435 8.3852 15.46 7.9871 15.2832 7.3203 C 14.5473 4.5388 12.0306 2.5003 9.0537 2.5 C 7.0425 2.5 5.2426 3.4307 4.0586 4.8926 L 5.5059 4.8926 C 6.1961 4.8927 6.7558 5.4524 6.7559 6.1426 C 6.7558 6.8327 6.196 7.3924 5.5059 7.3926 L 1.25 7.3926 C 0.5597 7.3926 0.0001 6.8328 0 6.1426 L 0 1.8564 C 0.0001 1.1662 0.5597 0.6064 1.25 0.6064 C 1.9401 0.6066 2.4999 1.1663 2.5 1.8564 L 2.5 2.875 C 4.1319 1.1085 6.462 0 9.0537 0 Z\"/></g></svg>",
+ "sound": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><g transform=\"translate(2 4)\"><path d=\"M 8.4216 0.4603 C 9.3593 -0.5093 11.0002 0.1548 11.0002 1.504 L 11.0002 14.4964 C 10.9998 15.8464 9.3566 16.5098 8.4196 15.5381 L 5.4503 12.4588 C 5.1676 12.1657 4.7781 11.9996 4.371 11.9995 L 2.0043 11.9995 C 0.9006 11.9993 0.0051 11.1044 0.0039 10.0001 L 0 6.0022 C -0.001 4.8962 0.8949 3.9989 2.0004 3.9989 L 4.3632 3.9989 C 4.7696 3.9989 5.1588 3.8338 5.4415 3.5415 L 8.4216 0.4603 Z\"/><path d=\"M 15.8488 1.3935 C 16.2393 1.0035 16.8727 1.0043 17.2631 1.3945 C 18.1304 2.2626 18.8195 3.2938 19.2889 4.4279 C 19.7582 5.5618 19.9998 6.7782 20 8.0056 C 20 9.2332 19.7582 10.45 19.2889 11.5842 C 18.8195 12.7185 18.1305 13.7493 17.2631 14.6176 C 16.8726 15.0083 16.2394 15.0082 15.8488 14.6176 C 15.4589 14.2268 15.4585 13.5931 15.8488 13.2025 C 16.5303 12.5202 17.071 11.7095 17.4399 10.8181 C 17.8087 9.9266 17.9996 8.9704 17.9996 8.0056 C 17.9994 7.0408 17.8088 6.0843 17.4399 5.1931 C 17.071 4.302 16.5301 3.4916 15.8488 2.8096 C 15.4588 2.4186 15.4583 1.7841 15.8488 1.3935 Z\"/><path d=\"M 12.8834 4.3468 C 13.2738 3.9563 13.9072 3.9566 14.2977 4.3468 C 14.7775 4.8272 15.1593 5.3991 15.419 6.0266 C 15.6785 6.6541 15.8126 7.3275 15.8127 8.0065 C 15.8126 8.6859 15.6788 9.3597 15.419 9.9874 C 15.1592 10.6151 14.7778 11.1858 14.2977 11.6663 C 13.9073 12.0569 13.274 12.0565 12.8834 11.6663 C 12.4933 11.2755 12.4931 10.6419 12.8834 10.2513 C 13.1777 9.9566 13.4117 9.6062 13.571 9.2212 C 13.7302 8.8364 13.8122 8.423 13.8123 8.0065 C 13.8122 7.5901 13.7301 7.1766 13.571 6.7918 C 13.4117 6.4071 13.1775 6.0563 12.8834 5.7618 C 12.4933 5.3709 12.4929 4.7373 12.8834 4.3468 Z\"/></g></svg>",
+ "mute": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><g transform=\"translate(2.121 1.997)\"><path d=\"M 0.7148 0.0446 C 1.0549 -0.0562 1.4384 0.0271 1.707 0.2956 L 19.707 18.2956 C 19.7694 18.3581 19.8207 18.4277 19.8632 18.5007 C 20.0858 18.8834 20.0346 19.3818 19.707 19.7097 C 19.3165 20.1001 18.6834 20.0999 18.2929 19.7097 L 14.8779 16.2946 L 14.8779 18.5007 C 14.8777 19.8486 13.2374 20.5128 12.2997 19.5446 L 8.498 15.6159 C 8.1214 15.2269 7.6029 15.0067 7.0614 15.0065 L 3.3827 15.0065 C 2.0028 15.0065 0.8838 13.8884 0.8827 12.5085 L 0.8798 7.4968 C 0.8789 6.1154 1.9985 4.9948 3.3798 4.9948 L 3.5781 4.9948 L 0.2929 1.7097 C -0.0976 1.3191 -0.0976 0.6861 0.2929 0.2956 C 0.3416 0.247 0.3939 0.2042 0.4491 0.1677 C 0.477 0.1493 0.5059 0.1332 0.5351 0.1179 C 0.593 0.0874 0.6531 0.0629 0.7148 0.0446 Z\"/><path d=\"M 12.3036 0.4558 C 13.2429 -0.5074 14.8777 0.1573 14.8779 1.5026 L 14.8779 10.6384 L 8.5468 4.3073 L 12.3036 0.4558 Z\"/></g></svg>"
+};
+function setControl(id,label,icon){
  const button=el(id);
  button.setAttribute('aria-label',label);
  button.title=label;
- button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+path+'"/></svg>';
+ button.innerHTML=controlIcons[icon];
 }
-function setPlay(label){
- setControl('play',label,label==='Pause'?'M9 5v14M15 5v14':'m8 5 12 7-12 7z');
+function setPlay(label){setControl('play',label,label==='Pause'?'pause':'play')}
+function setMute(){setControl('mute',muted?'Unmute':'Mute',muted?'mute':'sound')}
+let idleTimer;
+function setIdleGlow(visible){el('phone').classList.toggle('glint',visible)}
+function markActivity(){
+ setIdleGlow(false);
+ clearTimeout(idleTimer);
+ idleTimer=setTimeout(()=>{
+  if(ready&&start===null&&pausedAt===null&&!drag&&el('alarm-list').inert)setIdleGlow(true);
+ },10000);
 }
-function setMute(){
- const speaker='M4 9h4l5-4v14l-5-4H4z';
- setControl('mute',muted?'Unmute':'Mute',speaker+(muted?'m4 4 5 6m0-6-5 6':'m3-3q4 3 0 6m2-8q6 5 0 10'));
-}
+for(const event of ['pointerdown','pointermove','pointerup','keydown'])window.addEventListener(event,markActivity,{passive:true});
 function reelLandscapeTime(value){
  const minute=wrap(value,1440);
  const offset=minute>=390&&minute<=450?30:minute>450&&minute<510?(510-minute)/2:0;
@@ -605,7 +575,7 @@ function frame(now){
  }
  paintList(reset);
  const scenicFade=(t>=wideRevealAt?1:0)*(1-dissipation);
- reveal('wide-scene',scenePhoto?scenicFade:0);
+ reveal('wide-scene',widePhoto?scenicFade:0);
  const vibration=t-vibrationAt;
  let shake=0;
  [...el('ripples').children].forEach((ring,i)=>{
@@ -632,8 +602,12 @@ function frame(now){
  const sceneTime=wrap(reelAnchor-(t<impactAt?1:0),1440);
  el('dawn-hour').src=words[Math.floor(sceneTime/60)].src;
  const lower=sceneTime%60,minute=el('dawn-minute');
- if(minute.dataset.value!==String(lower)){minute.src=words[lower].src;minute.dataset.value=lower}
- minute.classList.toggle('gold',t>=impactAt);
+ const yellow=t>=impactAt;
+ const minuteKey=lower+(yellow?'-yellow':'-white');
+ if(minute.dataset.value!==minuteKey){
+  minute.src=(yellow?yellowWords:words)[lower].src;
+  minute.dataset.value=minuteKey;
+ }
  if(lastFrameTime<impactAt&&t>=impactAt&&t<impactAt+.15){lastTickTime=-Infinity;playWoodblockTick(false,3.15);tone(112,.085,.24)}
  reveal('alarm-screen',alarm);
  const canSlide=alarm>.62&&returnStart===null;
@@ -685,6 +659,7 @@ function restartReel(selected=alarmTime,clicked=false){
  if(!ready)return;
  unlock();
  stop();
+ setIdleGlow(false);
  // Done confirms once per run. Pausing keeps it locked; stopping resets it.
  el('done').disabled=true;
  primeTracks();
@@ -744,7 +719,13 @@ dial.onpointermove=e=>{
  show(magneticTime(drag.value,speed),true,true);
 };
 dial.onlostpointercapture=()=>drag=null;
-window.onkeydown=e=>{if(!ready)return;if(e.code==='Space'&&!(e.target instanceof HTMLButtonElement)){e.preventDefault();if(!e.repeat)toggleReel()}
+window.onkeydown=e=>{if(!ready)return;
+ if(e.code==='KeyS'&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!e.repeat){
+  const panel=el('reel-controls');
+  panel.hidden=!panel.hidden;
+  return;
+ }
+ if(e.code==='Space'&&!(e.target instanceof HTMLButtonElement)){e.preventDefault();if(!e.repeat)toggleReel()}
  else if(e.key==='Escape'){stop();show(saved)}
  else if(!el('done').disabled&&document.activeElement===dial&&['ArrowLeft','ArrowDown','ArrowUp','ArrowRight'].includes(e.key)){e.preventDefault();unlock();onboarding=false;stop();show(time+(['ArrowRight','ArrowUp'].includes(e.key)?1:-1),true,true)}};
 el('cancel').onclick=()=>{
@@ -761,9 +742,9 @@ el('cancel').onclick=()=>{
 };
 el('done').onclick=()=>{if(ready&&!el('done').disabled)restartReel(time,true)};
 prepareLens();
-setPlay('Play');setMute();
+setPlay('Play');setMute();setControl('restart','Restart','restart');
 window.onresize=()=>{if(start!==null)return;if(pausedAt>0){const now=performance.now();start=now-pausedAt*1000;frame(now);cancelAnimationFrame(animationId);start=null;}else{layout();detailCamera(0);el('alarm-list').style.setProperty('--list-scale',fit())}};layout();el('ui').hidden=true;
-(async()=>{try{[backgrounds,words]=await Promise.all([sequence(24,i=>loadImage('meadow-backgrounds/'+String(i).padStart(2,'0')+'-00.png')),sequence(60,i=>loadImage('fonts-svg/EN/'+numberToSlug(i)+'.svg'))]);widePhoto=await loadImage(widePath).catch(error=>{
+(async()=>{try{[backgrounds,words,yellowWords]=await Promise.all([sequence(24,i=>loadImage('meadow-backgrounds/'+String(i).padStart(2,'0')+'-00.png')),sequence(60,i=>loadImage('fonts-svg/EN/'+numberToSlug(i)+'.svg')),sequence(60,i=>loadImage('Yellow fonts/'+numberToSlug(i)+'.svg'))]);widePhoto=await loadImage(widePath).catch(error=>{
   console.warn('Wide dawn background failed; using the 06:00 frame.',error);
   return backgrounds[6];
  });
@@ -776,5 +757,5 @@ window.onresize=()=>{if(start!==null)return;if(pausedAt>0){const now=performance
   el('birds').append(bird);
  }
  el('dawn-hour').src=words[6].src;
- saved=alarmTime;show(alarmTime,false,false,360);ready=true;renderAlarms();paintList(0);el('status').hidden=true;el('ui').hidden=false}catch{el('status').textContent='Could not load local alarm assets.'}})();
+ saved=alarmTime;show(alarmTime,false,false,360);ready=true;renderAlarms();paintList(0);setIdleGlow(true);el('status').hidden=true;el('ui').hidden=false}catch{el('status').textContent='Could not load local alarm assets.'}})();
 </script></html>
