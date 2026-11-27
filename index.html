@@ -36,9 +36,8 @@ button:active{scale:.96}
 #wide-scene,#dawn-words,#ripples,#alarm-screen{position:fixed;inset:0;pointer-events:none;opacity:0}
 #wide-scene{z-index:-1;overflow:hidden;background:#0a0a0c}
 #wide-photo{position:absolute;max-width:none;transform-origin:50% 70%}
-#birds{position:absolute;left:0;top:41%;width:120px;height:44px;opacity:0}
+#birds{position:fixed;left:0;top:0;width:160px;height:44px;opacity:0;pointer-events:none;transform-origin:top left}
 #birds img{position:absolute;width:15px;height:auto;filter:brightness(.55);transform-origin:center}
-#birds{width:160px;top:4%}
 #dawn-words{text-align:center}
 #dawn-words img{position:absolute;left:50%;height:auto;display:block;transform:translateX(-50%)}
 #dawn-minute.gold{filter:brightness(0) saturate(100%) invert(86%) sepia(83%) saturate(960%) hue-rotate(337deg)}
@@ -74,8 +73,9 @@ button:active{scale:.96}
 <div id="ui"><img id="phone-topbar" class="phone-top" src="Top Bar 6_30.png" alt=""><div class="reading" id="hour"><div class="word"></div><span class="unit">hours</span></div><div class="reading" id="minute"><div class="word"></div><span class="unit">minutes</span></div>
 <div id="dial" role="slider" tabindex="0" aria-label="Alarm time" aria-valuemin="0" aria-valuemax="1439"><div id="lens" aria-hidden="true"><div id="lens-scene"><img id="lens-current" alt=""><img id="lens-next" alt=""></div></div><div class="lens-glint"></div><div id="knob"></div></div>
 <div class="actions"><button id="cancel">Cancel</button><button id="done">Done</button></div><div class="home"></div></div></div></main>
-<div id="wide-scene" aria-hidden="true"><img id="wide-photo" alt=""><div id="birds"></div></div>
+<div id="wide-scene" aria-hidden="true"><img id="wide-photo" alt=""></div>
 <div id="dawn-words" aria-hidden="true"><img id="dawn-hour" alt=""><img id="dawn-minute" alt=""></div>
+<div id="birds" aria-hidden="true"></div>
 <div id="ripples" aria-hidden="true"><span></span><span></span><span></span></div>
 <div id="alarm-screen" aria-hidden="true" inert><div id="alarm-card">
 <img id="alarm-photo" src="Экран будилника.png" alt="Alarm, 06:30"><img class="phone-top" src="Top Bar 6_30.png" alt="">
@@ -246,7 +246,7 @@ function stop(){
  pausedAt=null;
  cancelAnimationFrame(animationId);
  for(const track of tracks)cue(track,0,1,2,0);
- for(const id of ['wide-scene','dawn-words','ripples','alarm-screen'])reveal(id,0);
+ for(const id of ['wide-scene','dawn-words','birds','ripples','alarm-screen'])reveal(id,0);
  reveal('land',1);
  reveal('lens-scene',1);
  el('phone').style.background='';
@@ -287,11 +287,15 @@ function paintScenery(t,opening,shake){
  const insetX=(innerWidth-393*scale)/2*(1-opening);
  const insetY=(innerHeight-phoneHeight)/2*(1-opening);
  el('wide-scene').style.clipPath='inset('+insetY+'px '+insetX+'px round '+55*scale*(1-opening)+'px)';
+}
+function paintBirds(t,minuteTop,wordWidth){
  const flight=clamp01((t-14.8)/6.5);
- const flock=el('birds'),wordTop=(innerHeight-852*scale)/2+82*scale;
+ const flock=el('birds'),scale=wordWidth*.55/160;
+ const x=-165*scale+(innerWidth+170*scale)*flight;
+ const y=minuteTop+wordWidth*76/393*.45-21*scale;
+
  reveal('birds',cubicPhase(t,14.8,15.35)*(1-cubicPhase(t,20.75,21.3)));
- flock.style.top=Math.max(0,wordTop-65)+'px';
- flock.style.transform='translate('+(-175+(innerWidth+350)*flight)+'px,'+(5*Math.sin(flight*Math.PI*2)-12*flight)+'px) scale('+Math.min(1,wordTop/58)+')';
+ flock.style.transform='translate('+x+'px,'+(y+5*Math.sin(flight*Math.PI*2)-5*flight)+'px) scale('+scale+')';
  [...flock.children].forEach((bird,i)=>{
   const glide=.55+.45*Math.sin(t*2+i);
   const flap=Math.sin(t*(14+i*1.8)+i*2.1)*glide;
@@ -379,7 +383,9 @@ function frame(now){
  const sixPadding=reelAnchor===alarmTime?8.12:0;
  const extraScale=(wordWidth-baseWidth)/393;
  Object.assign(el('dawn-hour').style,{width:wordWidth+'px',top:(phoneTop+82*scale-sixPadding*extraScale)+'px'});
- Object.assign(el('dawn-minute').style,{width:wordWidth+'px',top:(phoneTop+209*scale-.12*extraScale)+'px'});
+ const minuteTop=phoneTop+209*scale-.12*extraScale;
+ Object.assign(el('dawn-minute').style,{width:wordWidth+'px',top:minuteTop+'px'});
+ paintBirds(t,minuteTop,wordWidth);
  const sceneTime=wrap(reelAnchor-(t<impactAt?1:0),1440);
  el('dawn-hour').src=words[Math.floor(sceneTime/60)].src;
  const lower=sceneTime%60,minute=el('dawn-minute');
