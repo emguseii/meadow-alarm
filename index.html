@@ -4,6 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Alarm · Meadow</title>
 <link rel="icon" type="image/png" sizes="64x64" href="./favicon.png">
+<link rel="preload" as="image" href="./meadow-backgrounds/06-00.jpg" fetchpriority="high">
 <style>
 *{box-sizing:border-box}
 body{margin:0;isolation:isolate;background:#0a0a0c;color:white;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;overflow:hidden}
@@ -80,6 +81,7 @@ button:active{scale:.96}
 }
 @media(prefers-reduced-motion:reduce){#phone.glint .dial-reflection{animation:none;opacity:.45}}
 #alarm-list{position:fixed;left:50%;top:50%;width:393px;height:852px;transform:translate(-50%,-50%) scale(var(--list-scale,1));border-radius:55px;background:#212121;box-shadow:inset 0 0 0 4px #fff4,0 0 0 4px #fff2;overflow:hidden;z-index:1}
+#alarm-list.show-art .alarm-art{background-image:var(--alarm-art)}
 #alarm-list h1{position:absolute;left:16px;top:73px;margin:0;font-size:24px}
 #alarm-list .phone-top{margin-top:3px}
 #add-alarm{position:absolute;right:12px;top:61px;width:48px;height:48px;box-shadow:none;background:transparent;backdrop-filter:none;padding:0;display:grid;place-items:center}
@@ -138,11 +140,20 @@ to set the time</div><div class="lens-glint"></div><svg class="dial-reflection" 
 const el=id=>document.getElementById(id);
 const simple='zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split(' ');
 function numberToSlug(n){return n<20?simple[n]:['twenty','thirty','forty','fifty'][Math.floor(n/10)-2]+(n%10?'-'+simple[n%10]:'')}
-async function loadImage(src){const img=new Image();img.src=src;await img.decode();return img}
-const sequence=(n,fn)=>Promise.all(Array.from({length:n},(_,i)=>fn(i)));
+async function loadImage(src,priority='auto'){
+ const img=new Image();
+ img.fetchPriority=priority;
+ img.src=src;
+ await img.decode();
+ return img;
+}
+const imageUrls=(count,path)=>Array.from({length:count},(_,i)=>path(i));
+const backgrounds=imageUrls(24,i=>'meadow-backgrounds/'+String(i).padStart(2,'0')+'-00.jpg');
+const words=imageUrls(60,i=>'fonts-svg/EN/'+numberToSlug(i)+'.svg');
+const yellowWords=imageUrls(60,i=>'Yellow fonts/'+numberToSlug(i)+'.svg');
 const wrap=(n,m)=>(n%m+m)%m;
 const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
-let backgrounds,words,yellowWords,ready=false,time=0,previous=-1,saved=0,start=null,drag=null,audio,animationId=0;
+let ready=false,time=0,previous=-1,saved=0,start=null,drag=null,audio,animationId=0;
 let lastTickTime=-Infinity;
 const duration=33.2;
 const hintUntil=2.15,introLength=5.1,staticMusicTurn=5.6;
@@ -163,7 +174,7 @@ function renderAlarms(){
   const h=Math.floor(time/60),m=time%60,angle=(time%720)*Math.PI/360;
   const card=document.createElement('article');card.className='alarm-row';
   card.innerHTML='<div class="alarm-art"><i></i></div><div class="alarm-name">'+numberToSlug(h)+' <small>hrs</small><br>'+numberToSlug(m)+' <small>min</small></div><button type="button" class="alarm-switch" role="switch" aria-label="Будильник '+numberToSlug(h)+' '+numberToSlug(m)+'"></button><div class="alarm-days" role="group" aria-label="Дни недели"></div>';
-  card.firstElementChild.style.backgroundImage='url("'+backgrounds[h].src+'")';
+  card.firstElementChild.style.setProperty('--alarm-art','url("'+backgrounds[h]+'")');
   Object.assign(card.querySelector('i').style,{left:(50+49*Math.sin(angle))+'%',top:(50-49*Math.cos(angle))+'%'});
   const control=card.querySelector('.alarm-switch'),dayRow=card.querySelector('.alarm-days');
   function updateSwitch(){
@@ -198,6 +209,7 @@ function paintList(opacity,press=0){
  const list=el('alarm-list');
  list.style.setProperty('--list-scale',fit());
  list.style.opacity=opacity;
+ if(opacity>0&&!list.classList.contains('show-art'))list.classList.add('show-art');
  list.style.pointerEvents=opacity>.95?'auto':'none';
  list.inert=opacity<.95;
  const add=el('add-alarm');
@@ -257,14 +269,15 @@ const pullBackAt=counterEnd,wideRevealAt=wordHandoffAt+1;
 let directDone=false;
 let reelAnchor=390,lastFrameTime=-1,returnStart=null,sliderDrag=null,slidePosition=0;
 const alarmTime=390;
-const widePath="meadow-backgrounds/dawn-wide.png";
-const tracks=["adinkra_audio-congas-and-woodblock-526722.mp3", "звуки пения птитц.mp3", "vibrotone-for-three-vibration-waves.mp3", "iphone_alarm.mp3", "3d-zvuk-atmosfera-derevni.mp3"].map(path=>{
- const media=new Audio(path);
- media.preload='auto';
+const widePath='meadow-backgrounds/dawn-wide.jpg';
+const tracks=['percussion','birds','vibration','alarm','countryside'].map(name=>{
+ const media=new Audio();
+ media.preload='none';
+ media.src='audio/'+name+'.m4a';
  media.volume=0;
  return {media,active:false};
 });
-let pausedAt=null,muted=false,primed=false,widePhoto;
+let pausedAt=null,muted=false,primed=false,widePhoto,wideLandscape;
 const reveal=(id,value)=>{el(id).style.opacity=value};
 const clamp01=x=>Math.min(1,Math.max(0,x));
 function prepareLens(){
@@ -359,11 +372,11 @@ function primeTracks(){
   media.play().then(()=>{if(!track.active){media.pause();media.currentTime=0}}).catch(()=>{});
  }
 }
-function cue(track,t,from,to,volume,offset=0){
+function cue(track,t,from,to,volume){
  const active=t>=from&&t<to;
  const {media}=track;
  if(active&&!track.active){
-  if(media.readyState)media.currentTime=offset+Math.max(0,t-from);
+  if(media.readyState)media.currentTime=Math.max(0,t-from);
   media.play().catch(()=>{});
  }
  if(!active&&track.active){media.pause();if(media.readyState)media.currentTime=0}
@@ -381,14 +394,19 @@ function show(value,feedback=false,manual=false,light=value){
  if(time===previous&&lighting===previousLight)return;
  for(const [id,n,unit] of [['hour',h,'hour'],['minute',m,'minute']]){
  const block=el(id),slot=block.firstElementChild;
- if(slot.dataset.number!=String(n)){const img=words[n].cloneNode();img.alt=numberToSlug(n);slot.replaceChildren(img);slot.dataset.number=n;block.lastElementChild.textContent=unit+(n===1?'':'s')}}
+ if(slot.dataset.number!=String(n)){const img=new Image();img.alt=numberToSlug(n);img.src=words[n];slot.replaceChildren(img);slot.dataset.number=n;block.lastElementChild.textContent=unit+(n===1?'':'s')}}
  if(Math.floor(previousLight/60)!==lightHour){
   for(const prefix of ['bg','lens']){
-   el(prefix+'-current').src=backgrounds[lightHour].src;
-   el(prefix+'-next').src=backgrounds[(lightHour+1)%24].src;
+   el(prefix+'-current').src=backgrounds[lightHour];
   }
  }
- el('bg-next').style.opacity=el('lens-next').style.opacity=(lighting%60)/60;
+ const blend=(lighting%60)/60;
+ const nextBackground=backgrounds[(lightHour+1)%24];
+ for(const id of ['bg-next','lens-next']){
+  const next=el(id);
+  if(blend&&next.getAttribute('src')!==nextBackground)next.src=nextBackground;
+  next.style.opacity=blend;
+ }
  const rad=((h%12)*60+m)*.5*Math.PI/180;
  el('knob').style.left=(50+50*Math.sin(rad))+'%';el('knob').style.top=(50-50*Math.cos(rad))+'%';
  el('dial').setAttribute('aria-valuenow',time);el('dial').setAttribute('aria-valuetext',numberToSlug(h)+(h===1?' hour ':' hours ')+numberToSlug(m)+(m===1?' minute':' minutes'));
@@ -430,19 +448,18 @@ function setWakeAssets(value){
  const h=Math.floor(value/60),m=value%60;
  for(const [id,n] of [['alarm-hour',h],['alarm-minute',m]]){
   const word=el(id);
-  word.src=yellowWords[n].src;
+  word.src=yellowWords[n];
   word.alt=numberToSlug(n);
   // The three widest exports need a little more room inside the phone.
   const paintedWidth={23:369,27:389,28:364}[n];
   word.style.setProperty('--yellow-width',(paintedWidth?Math.min(618,618*357/paintedWidth):618)+'px');
  }
- el('alarm-current').src=backgrounds[6].src;
+ el('alarm-current').src=backgrounds[6];
  reveal('alarm-next',0);
- el('wide-photo').src=widePhoto.src;
 }
 function paintScenery(t,opening,shake){
  if(!widePhoto)return;
- const originalWide=widePhoto!==backgrounds[6];
+ const originalWide=widePhoto===wideLandscape;
  const scale=fit()*holdZoom(),phoneHeight=852*scale;
  const ratio=widePhoto.naturalWidth/widePhoto.naturalHeight;
  const startHeight=originalWide?phoneHeight*323/(325*.90):phoneHeight;
@@ -582,6 +599,8 @@ function frame(now){
  }
  paintList(reset);
  const scenicFade=(t>=wideRevealAt?1:0)*(1-dissipation);
+ if(lastFrameTime<wideRevealAt)widePhoto=wideLandscape||widePhoto;
+ if(scenicFade&&widePhoto&&el('wide-photo').src!==widePhoto.src)el('wide-photo').src=widePhoto.src;
  reveal('wide-scene',widePhoto?scenicFade:0);
  const vibration=t-vibrationAt;
  let shake=0;
@@ -593,7 +612,7 @@ function frame(now){
   shake+=pulse*Math.sin(vibration*78)*2;
  });
  reveal('ripples',1-dissipation);
- paintScenery(t,opening,shake);
+ if(scenicFade)paintScenery(t,opening,shake);
  const grow=cubicPhase(t,wideRevealAt,wideRevealAt+.46),scale=fit()*holdZoom(),phoneTop=(innerHeight-852*scale)/2;
  const baseWidth=393*scale;
  const largeWidth=Math.max(baseWidth,Math.min(innerWidth*.92,innerHeight*.82,baseWidth*1.58));
@@ -605,14 +624,19 @@ function frame(now){
  Object.assign(el('dawn-hour').style,{width:wordWidth+'px',top:(phoneTop+82*scale-sixPadding*extraScale)+'px'});
  const minuteTop=phoneTop+209*scale-.12*extraScale;
  Object.assign(el('dawn-minute').style,{width:wordWidth+'px',top:minuteTop+'px'});
- paintBirds(t,minuteTop,wordWidth);
+ if(t>=14.8&&t<21.3)paintBirds(t,minuteTop,wordWidth);
+ else reveal('birds',0);
  const sceneTime=wrap(reelAnchor-(t<impactAt?1:0),1440);
- el('dawn-hour').src=words[Math.floor(sceneTime/60)].src;
+ const upper=Math.floor(sceneTime/60),hour=el('dawn-hour');
+ if(hour.dataset.value!==String(upper)){
+  hour.src=words[upper];
+  hour.dataset.value=upper;
+ }
  const lower=sceneTime%60,minute=el('dawn-minute');
  const yellow=t>=impactAt;
  const minuteKey=lower+(yellow?'-yellow':'-white');
  if(minute.dataset.value!==minuteKey){
-  minute.src=(yellow?yellowWords:words)[lower].src;
+  minute.src=(yellow?yellowWords:words)[lower];
   minute.dataset.value=minuteKey;
  }
  if(lastFrameTime<impactAt&&t>=impactAt&&t<impactAt+.15){lastTickTime=-Infinity;playWoodblockTick(false,3.15);tone(112,.085,.24)}
@@ -629,7 +653,7 @@ function frame(now){
  slider.style.setProperty('--label-hide',cubicPhase(position,.42,.83));
  cue(tracks[0],musicClock,percussionAt,percussionAt+percussionCut,.73*cubicPhase(musicClock,percussionAt,percussionAt+.25));
  cue(tracks[1],t,12,impactAt,.63*cubicPhase(t,12,17));
- cue(tracks[4],t,12,impactAt,.34*cubicPhase(t,12,13.5),1.1);
+ cue(tracks[4],t,12,impactAt,.34*cubicPhase(t,12,13.5));
  cue(tracks[2],t,vibrationAt,vibrationEnd,.34);
  cue(tracks[3],t,ringAt,returning+.3,.72*(1-cubicPhase(t,returning,returning+.3)));
  lastFrameTime=t;
@@ -754,18 +778,33 @@ el('done').onclick=()=>{if(ready&&!el('done').disabled)restartReel(time,true)};
 prepareLens();
 setPlay('Play');setMute();setControl('restart','Restart','restart');
 window.onresize=()=>{if(start!==null)return;if(pausedAt>0){const now=performance.now();start=now-pausedAt*1000;frame(now);cancelAnimationFrame(animationId);start=null;}else{layout();detailCamera(0);el('alarm-list').style.setProperty('--list-scale',fit())}};layout();el('ui').hidden=true;
-(async()=>{try{[backgrounds,words,yellowWords]=await Promise.all([sequence(24,i=>loadImage('meadow-backgrounds/'+String(i).padStart(2,'0')+'-00.png')),sequence(60,i=>loadImage('fonts-svg/EN/'+numberToSlug(i)+'.svg')),sequence(60,i=>loadImage('Yellow fonts/'+numberToSlug(i)+'.svg'))]);widePhoto=await loadImage(widePath).catch(error=>{
-  console.warn('Wide dawn background failed; using the 06:00 frame.',error);
-  return backgrounds[6];
- });
- setWakeAssets(alarmTime);
-
+async function warmImages(){
+ const queue=[widePath,...backgrounds.slice(7),...backgrounds.slice(0,6),...words];
+ async function worker(){
+  while(queue.length){
+   const path=queue.shift();
+   const img=await loadImage(path,'low').catch(()=>null);
+   if(path===widePath)wideLandscape=img;
+  }
+ }
+ await Promise.all(Array.from({length:4},worker));
+}
+{
+ saved=alarmTime;
+ loadImage(backgrounds[6],'high').then(img=>{widePhoto??=img}).catch(()=>{});
+ show(alarmTime,false,false,360);
+ ready=true;
+ renderAlarms();
+ paintList(0);
+ setIdleGlow(true);
+ el('status').hidden=true;
+ el('ui').hidden=false;
+ setTimeout(warmImages,700);
  for(const [x,y,size,opacity] of [[0,17,12,.65],[26,8,15,.78],[45,24,10,.56],[75,15,12,.67],[99,2,15,.76],[126,11,13,.7]]){
   const bird=new Image();
   bird.src='dawn-starling.webp';
   Object.assign(bird.style,{left:x+'px',top:y+'px',width:size+'px',opacity});
   el('birds').append(bird);
  }
- el('dawn-hour').src=words[6].src;
- saved=alarmTime;show(alarmTime,false,false,360);ready=true;renderAlarms();paintList(0);setIdleGlow(true);el('status').hidden=true;el('ui').hidden=false}catch{el('status').textContent='Could not load local alarm assets.'}})();
+}
 </script></html>
