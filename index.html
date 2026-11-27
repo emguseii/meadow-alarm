@@ -58,8 +58,8 @@ button:active{scale:.96}
 #snooze{background:transparent;box-shadow:none;backdrop-filter:none}
 #alarm-track{position:relative;touch-action:none;cursor:grab}
 #alarm-track::before{content:"";position:absolute;inset:0;border-radius:inherit;background:#2c2b1f;opacity:var(--cover,0)}
-#alarm-track span{position:absolute;inset:0;display:grid;place-items:center;font-size:24px;background:linear-gradient(100deg,#a1a4a500 35%,#fff8 50%,#a1a4a500 65%);background-size:270% 100%;background-position:var(--shine);background-clip:text;color:transparent}
-#alarm-track.moving span{background-image:linear-gradient(100deg,#85847a 35%,#fff 50%,#85847a 65%)}
+#alarm-track span{position:absolute;left:91px;right:16px;top:50%;transform:translateY(-50%);font-size:23px;line-height:1;white-space:nowrap;text-align:center;color:#dddccf;opacity:0;pointer-events:none}
+#alarm-track.moving span{opacity:calc(1 - var(--label-hide,0))}
 #alarm-thumb{position:absolute;left:0;top:0;width:98px;height:98px;border:1px solid #fff3;border-radius:50%;background:#25251b;display:grid;place-items:center;opacity:var(--cover,0)}
 #alarm-thumb::after{content:"";width:35px;height:35px;border-radius:10px;background:white}
 #phone.detail #dial,#phone.detail .reading,#phone.detail .actions,#phone.detail .home,#phone.detail .phone-top{transition:opacity 130ms}
@@ -201,8 +201,9 @@ el('add-alarm').onclick=()=>{
   if(!listOpening)return;
   began??=now;
   const t=(now-began)/1000;
-  paintList(1-cubicPhase(t,.13,.36),cubicPhase(t,0,.09)*(1-cubicPhase(t,.09,.28)));
-  if(t<.36)requestAnimationFrame(animate);
+  paintList(1-cubicPhase(t,.13,.30),cubicPhase(t,0,.09)*(1-cubicPhase(t,.09,.28)));
+  reveal('phone',cubicPhase(t,.30,.49));
+  if(t<.49)requestAnimationFrame(animate);
   else{listOpening=false;onboarding=true;showWheelHint(true);el('dial').focus({preventScroll:true})}
  }
  requestAnimationFrame(animate);
@@ -381,6 +382,7 @@ function show(value,feedback=false,manual=false,light=value){
 function stop(){
  start=null;
  listOpening=false;
+ reveal('phone',1);
  paintList(0);
  el('done').disabled=false;
  pausedAt=null;
@@ -447,8 +449,9 @@ function paintBirds(t,minuteTop,wordWidth){
 const holdZoom=()=>innerHeight/(852*fit());
 function detailCamera(t){
  const stage=el('phone'),scale=fit();
- const follow=cubicPhase(t,detailAt,detailAt+.38)*(1-cubicPhase(t,7.62,7.76));
- const counter=t>=counterStart?1-cubicPhase(t,pullBackAt,wordHandoffAt):0;
+ const counterIn=cubicPhase(t,counterStart-.22,counterStart+.32);
+ const follow=cubicPhase(t,detailAt,detailAt+.38)*(1-counterIn);
+ const counter=counterIn*(1-cubicPhase(t,pullBackAt,wordHandoffAt));
  const charge=cubicPhase(t,8.1,pullBackAt)*counter;
  const hold=cubicPhase(t,pullBackAt,wordHandoffAt)*(1-cubicPhase(t,returnAt,returnAt+1.3));
  const zoom=1+follow*1.5+counter*.72+charge*.78+(holdZoom()-1)*hold;
@@ -476,6 +479,11 @@ function setMute(){
  const speaker='M4 9h4l5-4v14l-5-4H4z';
  setControl('mute',muted?'Unmute':'Mute',speaker+(muted?'m4 4 5 6m0-6-5 6':'m3-3q4 3 0 6m2-8q6 5 0 10'));
 }
+function reelLandscapeTime(value){
+ const minute=wrap(value,1440);
+ const offset=minute>=390&&minute<=450?30:minute>450&&minute<510?(510-minute)/2:0;
+ return value-offset;
+}
 function frame(now){
  if(start===null)return;
  const elapsed=reelElapsed(now),musicClock=elapsed-leadIn,t=storyTime(elapsed);
@@ -495,13 +503,15 @@ function frame(now){
  // At the final minute the readout says :29 while the landscape has already arrived at :30.
  const heldLight=reelAnchor===alarmTime?360:reelAnchor;
  const settleLight=cubicPhase(t,9.5,10.15);
- const lightDelta=wrap(heldLight-runningTime+720,1440)-720;
- const light=t<0?runningTime:t>=spinAt&&t<10.15?runningTime+lightDelta*settleLight:heldLight;
+ const sceneryTime=reelLandscapeTime(runningTime);
+ const lightDelta=wrap(heldLight-sceneryTime+720,1440)-720;
+ const light=t<0?runningTime:t>=spinAt&&t<10.15?sceneryTime+lightDelta*settleLight:heldLight;
  const wheelTicks=(t<0&&entry>=hintUntil)||(t>=spinAt&&t<percussionAt);
  show(runningTime,wheelTicks,false,light);
  const opening=cubicPhase(t,wideRevealAt,12.4);
  const reset=cubicPhase(t,returning,returning+1.3);
  const alarm=cubicPhase(t,ringAt,ringAt+1)*(1-reset);
+ reveal('phone',t>=ringAt?0:leadIn?cubicPhase(elapsed,listLead,listLead+.23):1);
  const dissipation=cubicPhase(t,ringAt,ringAt+1);
  const phoneFade=cubicPhase(t,wideRevealAt,wideRevealAt+.43)*(1-reset);
  el('phone').style.setProperty('--outline',1-phoneFade);
@@ -522,7 +532,7 @@ function frame(now){
  }
  const listPress=cubicPhase(elapsed,.68,.8)*(1-cubicPhase(elapsed,.8,1.02));
  const listIntro=leadIn?1-cubicPhase(elapsed,1.02,listLead):0;
- paintList(Math.max(listIntro,cubicPhase(t,returning+.85,returning+1.55)),listPress);
+ paintList(Math.max(listIntro,reset),listPress);
  if(leadIn&&lastFrameTime<.8-leadIn&&elapsed>=.8&&elapsed<1)tone(530,.06,.07);
  const scenicFade=(t>=wideRevealAt?1:0)*(1-dissipation);
  reveal('wide-scene',widePhoto?scenicFade:0);
@@ -566,8 +576,8 @@ function frame(now){
  const position=sliderDrag||returnStart!==null?slidePosition:Math.max(slidePosition,cubicPhase(t,autoSlide,returnAt));
  el('alarm-thumb').style.transform='translateX('+((slider.clientWidth-98)*position)+'px)';
  slider.classList.toggle('moving',position>.002);
- slider.style.setProperty('--cover',Math.min(1,position*32));
- slider.style.setProperty('--shine',((t*57)%100)+'%');
+ slider.style.setProperty('--cover',position>.002?1:0);
+ slider.style.setProperty('--label-hide',cubicPhase(position,.42,.83));
  cue(tracks[0],musicClock,percussionAt,percussionAt+percussionCut,.73*cubicPhase(musicClock,percussionAt,percussionAt+.25));
  cue(tracks[1],t,12,impactAt,.63*cubicPhase(t,12,17));
  cue(tracks[4],t,12,impactAt,.34*cubicPhase(t,12,13.5),1.1);
