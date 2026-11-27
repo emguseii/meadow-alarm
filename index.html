@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alarm · Meadow</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0a0a0c;color:white;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;overflow:hidden}
+#phone{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:393px;height:852px;border-radius:55px;overflow:hidden;background:#121824;isolation:isolate}
+#camera,#land,#land img{position:absolute;inset:0;width:100%;height:100%}
+#camera{transform-origin:50% 41%}
+#land img{object-fit:cover;pointer-events:none}
+#ui{position:absolute;width:393px;height:852px;left:50%;top:50%;transform-origin:center;user-select:none;-webkit-user-select:none}
+.reading{position:absolute;left:0;right:0;text-align:center;filter:drop-shadow(0 0 4px #0002)}
+#hour{top:82px}#minute{top:209px}
+.word{width:393px;height:76px;display:grid;place-items:center}.word img{grid-area:1/1;max-width:100%;max-height:76px}
+.unit{display:block;font-size:16px;line-height:24px;font-weight:510;margin-top:-3px}
+#dial{position:absolute;left:55.5px;top:387.168px;width:279px;height:279px;border-radius:50%;touch-action:none;cursor:grab;outline-offset:6px}
+#lens,.lens-glint,#lens-scene{position:absolute;inset:0;border-radius:inherit;pointer-events:none}
+#lens{overflow:hidden}
+#lens-scene{overflow:hidden;transform:scale(1.06);mask-image:radial-gradient(circle closest-side,transparent 71%,#000 99%);-webkit-mask-image:radial-gradient(circle closest-side,transparent 71%,#000 99%)}
+#lens-scene img{position:absolute;left:var(--sample-x);top:var(--sample-y);width:var(--sample-w);height:var(--sample-h);object-fit:cover}
+#lens.native{backdrop-filter:url(#liquid-glass-lens)}
+#lens.native #lens-scene{display:none}
+.lens-glint{background:rgba(0,0,0,.10);border:1.06px solid rgba(255,255,255,.10);box-shadow:inset 3px 3px 8px #ffffff73,inset -2px -2px 6px #ffffff33}
+.lens-glint::after{content:"";position:absolute;inset:0;border-radius:inherit;background:conic-gradient(from -45deg,#dfedef80,#b8f5ff38,transparent,#ffa8ea32,#f8deaf48,transparent,#dfedef80);mask-image:radial-gradient(circle closest-side,transparent 97.8%,#000 99.6%,transparent 100%)}
+#wake{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:.7em 1.4em;white-space:nowrap;font-size:clamp(20px,3vw,34px);font-weight:400;letter-spacing:.02em;color:#fff;background:#0e191c4d;border:1px solid #ffffff57;box-shadow:0 0 32px #fff2;border-radius:100px;text-shadow:0 1px 9px #0008;pointer-events:none;opacity:0}
+#dial:active{cursor:grabbing}
+#knob{position:absolute;width:42.247px;height:42.247px;transform:translate(-50%,-50%);background:#fff6;border:3.775px solid #fff3;border-radius:50%;backdrop-filter:blur(12px);box-shadow:0 0 4.22px #0003,inset 1px 1px 4px #fff3}
+.actions{position:absolute;top:758.53px;left:16px;display:flex;align-items:center;gap:12px}
+button{font:400 18px/1.5 inherit;font-family:inherit;font-size:18px;color:white;width:174.5px;height:61px;border:0;border-radius:16px;background:#0009;backdrop-filter:blur(4px);box-shadow:inset 0 0 9.43px #0a0a0a80,inset 0 0 0 1px #ffffff22;cursor:pointer}
+#done{height:60px;background:#ffffff29;font-weight:590;font-size:17.29px;box-shadow:inset 0 0 16px #ffffff80}
+button:active{scale:.96}
+.home{position:absolute;left:124.5px;top:839px;width:144px;height:5px;border-radius:9px;background:#fffa}
+#status{position:fixed;inset:48% 0 auto;text-align:center;pointer-events:none}
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<filter id="liquid-glass-lens" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+<feImage id="lens-map" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="field"/>
+<feDisplacementMap in="SourceGraphic" in2="field" scale="44.4" xChannelSelector="R" yChannelSelector="G"/>
+</filter></defs></svg>
+<main id="phone" aria-label="Set alarm"><div id="camera"><div id="land"><img id="bg-current" alt=""><img id="bg-next" alt=""></div>
+<div id="ui"><div class="reading" id="hour"><div class="word"></div><span class="unit">hours</span></div><div class="reading" id="minute"><div class="word"></div><span class="unit">minutes</span></div>
+<div id="dial" role="slider" tabindex="0" aria-label="Alarm time" aria-valuemin="0" aria-valuemax="1439"><div id="lens" aria-hidden="true"><div id="lens-scene"><img id="lens-current" alt=""><img id="lens-next" alt=""></div></div><div class="lens-glint"></div><div id="knob"></div></div>
+<div class="actions"><button id="cancel">Cancel</button><button id="done">Done</button></div><div class="home"></div></div></div><div id="wake" aria-hidden="true">06:30 — Wake up</div></main><output id="status">Loading…</output>
+<script>
+'use strict';
+const el=id=>document.getElementById(id);
+const simple='zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split(' ');
+function numberToSlug(n){return n<20?simple[n]:['twenty','thirty','forty','fifty'][Math.floor(n/10)-2]+(n%10?'-'+simple[n%10]:'')}
+async function loadImage(src){const img=new Image();img.src=src;await img.decode();return img}
+const sequence=(n,fn)=>Promise.all(Array.from({length:n},(_,i)=>fn(i)));
+const wrap=(n,m)=>(n%m+m)%m;
+const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
+let backgrounds,words,ready=false,time=0,previous=-1,saved=0,start=null,drag=null,audio,animationId=0;
+let lastTickTime=-Infinity;
+const alarmAudio=new Audio('./alarm-melody.mp3');
+alarmAudio.loop=true;
+alarmAudio.preload='auto';
+alarmAudio.volume=0;
+let melodyFailed=false,melodyWanted=false,melodyRequest=null;
+alarmAudio.addEventListener('error',()=>{melodyFailed=true});
+
+function prepareLens(){
+ const canvas=document.createElement('canvas');
+ const size=279,center=(size-1)/2;
+ canvas.width=canvas.height=size;
+ const ctx=canvas.getContext('2d'),map=ctx.createImageData(size,size);
+ for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+  const dx=(x-center)/center,dy=(y-center)/center,r=Math.hypot(dx,dy);
+  const displacement=.49*ease((r-.68)/.32);
+  const i=(y*size+x)*4;
+  map.data[i]=Math.round(127.5-255*dx/Math.max(1,r)*displacement);
+  map.data[i+1]=Math.round(127.5-255*dy/Math.max(1,r)*displacement);
+  map.data[i+3]=255;
+ }
+ ctx.putImageData(map,0,0);
+ el('lens-map').setAttribute('href',canvas.toDataURL());
+ // Chromium supports SVG URL backdrop filters; use the layered lens elsewhere.
+ if(/Chrome\//.test(navigator.userAgent)&&CSS.supports('backdrop-filter','url(#liquid-glass-lens)')){
+  el('lens').classList.add('native');
+ }
+}
+const fit=()=>Math.min(1,innerWidth/393,innerHeight/852);
+function layout(full=0,zoom=1,visible=1,landScale=1,pan=0){
+ const scale=fit(),w=393*scale,h=852*scale,p=el('phone');
+ const width=w+(innerWidth-w)*full,height=h+(innerHeight-h)*full;
+ p.style.width=width+'px';p.style.height=height+'px';
+ p.style.borderRadius=(55*scale*(1-full))+'px';
+ el('camera').style.transform='scale('+zoom+') translateY('+(pan*scale)+'px)';
+ el('land').style.transform='scale('+landScale+')';
+ el('ui').style.transform='translate(-50%,-50%) scale('+scale+')';
+ el('ui').style.opacity=visible;
+ el('ui').inert=visible<.05;
+ const lens=el('lens').style;
+ lens.setProperty('--sample-w',width/scale*landScale+'px');
+ lens.setProperty('--sample-h',height/scale*landScale+'px');
+ lens.setProperty('--sample-x',((393-width/scale*landScale)/2-55.5)+'px');
+ lens.setProperty('--sample-y',((852-height/scale*landScale)/2-387.168)+'px');
+}
+function unlock(){if(!audio)audio=new AudioContext();if(audio.state==='suspended')audio.resume()}
+function tone(freq,length,volume){
+ if(!audio)return;const at=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();
+ o.type='sine';o.frequency.value=freq;o.connect(g).connect(audio.destination);
+ g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(volume,at+.002);g.gain.exponentialRampToValueAtTime(.0001,at+length);o.start(at);o.stop(at+length+.002)
+}
+function playWoodblockTick(isHour=false){
+ const now=performance.now();
+ if(!audio||audio.state!=='running'||now-lastTickTime<40)return;
+ lastTickTime=now;
+ const at=audio.currentTime,osc=audio.createOscillator(),filter=audio.createBiquadFilter(),gain=audio.createGain();
+ osc.type=isHour?'sine':'triangle';
+ osc.frequency.setValueAtTime(isHour?320:680,at);
+ osc.frequency.exponentialRampToValueAtTime(isHour?155:340,at+(isHour?.045:.022));
+ filter.type='bandpass';
+ filter.frequency.value=isHour?285:620;
+ filter.Q.value=isHour?2.5:3.5;
+ gain.gain.setValueAtTime(.0001,at);
+ gain.gain.linearRampToValueAtTime(isHour?.25:.18,at+.002);
+ gain.gain.exponentialRampToValueAtTime(.0001,at+(isHour?.062:.037));
+ osc.connect(filter).connect(gain).connect(audio.destination);
+ osc.start(at);
+ osc.stop(at+(isHour?.064:.039));
+}
+function tickBetween(from,to){
+ const delta=wrap(to-from+720,1440)-720;
+ const end=from+delta;
+ const first=delta>0?from+1:end;
+ const last=delta>0?end:from-1;
+ if(Math.ceil(first/60)*60<=last)playWoodblockTick(true);
+ else if(Math.ceil(first/10)*10<=last)playWoodblockTick();
+}
+function magneticTime(value,speed){
+ const nearest=Math.round(value/10)*10;
+ const distance=value-nearest;
+ const pull=(1-ease(Math.abs(distance)/1.35))*(1-ease(speed/.10));
+ return value-distance*pull;
+}
+function pauseMelody(){
+ alarmAudio.pause();
+ alarmAudio.volume=0;
+ if(alarmAudio.readyState)alarmAudio.currentTime=0;
+}
+function startMelody(){
+ if(melodyFailed||melodyRequest||!alarmAudio.paused)return;
+ melodyRequest=alarmAudio.play().then(()=>{
+  if(!melodyWanted)pauseMelody();
+ }).catch(error=>{
+  if(error.name!=='AbortError')melodyFailed=true;
+ }).finally(()=>{melodyRequest=null});
+}
+function updateMelody(t){
+ const wanted=t>=15&&t<23.7;
+ if(wanted&&!melodyWanted){melodyWanted=true;startMelody()}
+ if(!wanted&&melodyWanted){melodyWanted=false;pauseMelody()}
+ if(wanted)alarmAudio.volume=.85*cubicPhase(t,15,16)*(1-cubicPhase(t,22.5,23.7));
+}
+function show(value,feedback=false,manual=false){
+ time=wrap(Math.round(value),1440);const h=Math.floor(time/60),m=time%60;
+ if(time===previous)return;
+ for(const [id,n,unit] of [['hour',h,'hour'],['minute',m,'minute']]){
+ const block=el(id),slot=block.firstElementChild;
+ if(slot.dataset.number!=String(n)){const img=words[n].cloneNode();img.alt=numberToSlug(n);slot.replaceChildren(img);slot.dataset.number=n;block.lastElementChild.textContent=unit+(n===1?'':'s')}}
+ if(Math.floor(previous/60)!==h){
+  for(const prefix of ['bg','lens']){
+   el(prefix+'-current').src=backgrounds[h].src;
+   el(prefix+'-next').src=backgrounds[(h+1)%24].src;
+  }
+ }
+ el('bg-next').style.opacity=el('lens-next').style.opacity=m/60;
+ const rad=((h%12)*60+m)*.5*Math.PI/180;
+ el('knob').style.left=(50+50*Math.sin(rad))+'%';el('knob').style.top=(50-50*Math.cos(rad))+'%';
+ el('dial').setAttribute('aria-valuenow',time);el('dial').setAttribute('aria-valuetext',numberToSlug(h)+' hours '+numberToSlug(m)+' minutes');
+ if(feedback&&previous>=0){tickBetween(previous,time);
+ if(manual)navigator.vibrate?.(4)}
+ previous=time
+}
+function stop(){
+ start=null;
+ cancelAnimationFrame(animationId);
+ layout();
+ melodyWanted=false;
+ pauseMelody();
+ el('wake').style.opacity=0;
+ el('done').style.transform='';
+ el('done').style.filter='';
+ el('knob').style.scale='';
+}
+function cubicPhase(t,a,b){
+ const x=Math.max(0,Math.min(1,(t-a)/(b-a)));
+ return x<.5?4*x**3:1-(-2*x+2)**3/2;
+}
+function easeOutBack(x){
+ const offset=x-1;
+ return 1+2.70158*offset**3+1.70158*offset**2;
+}
+function frame(now){
+ if(start===null)return;
+ const t=((now-start)/1000)%24;
+ const travelBack=cubicPhase(t,8,12.6);
+ const settle=Math.max(0,Math.min(1,(t-12.6)/.4));
+ const value=t<8?870*cubicPhase(t,2,8):t<13?870-476*travelBack-4*easeOutBack(settle):390*(1-cubicPhase(t,22.5,24));
+ show(value,t>=2&&t<13);
+ const closeup=cubicPhase(t,8,13)*(1-cubicPhase(t,13,15));
+ const landscape=cubicPhase(t,15,20)*(1-cubicPhase(t,22.5,24));
+ const full=cubicPhase(t,15,18)*(1-cubicPhase(t,22.5,24));
+ const visible=1-cubicPhase(t,15,17)*(1-cubicPhase(t,22.5,24));
+ const press=cubicPhase(t,13.9,14.2)*(1-cubicPhase(t,14.2,14.75));
+ layout(full,1+.35*closeup,visible,1+.07*landscape,80*closeup);
+ el('done').style.transform='scale('+(1-.06*press)+')';
+ el('done').style.filter='brightness('+(1+.6*press)+')';
+ el('knob').style.scale=t<2?1+.15*Math.sin(Math.PI*t/2)**2:1;
+ const wake=cubicPhase(t,20,20.55)*(1-cubicPhase(t,22.5,23.05));
+ const pulse=.5+.5*Math.sin((t-20)*Math.PI*2);
+ el('wake').style.opacity=wake;
+ el('wake').style.boxShadow='0 0 '+(24+14*pulse)+'px rgba(255,255,255,'+(.13+.09*pulse)+')';
+ updateMelody(t);
+ animationId=requestAnimationFrame(frame);
+}
+function angle(e){const r=el('dial').getBoundingClientRect();return Math.atan2(e.clientX-r.left-r.width/2,r.top+r.height/2-e.clientY)*180/Math.PI}
+const dial=el('dial');
+dial.onpointerdown=e=>{if(!ready||drag||e.button!==0)return;unlock();stop();dial.setPointerCapture(e.pointerId);const a=angle(e);
+ const offset=wrap(a-time*.5+180,360)-180;drag={id:e.pointerId,a,value:time+offset*2,stamp:e.timeStamp};show(drag.value,false)};
+dial.onpointermove=e=>{
+ if(!drag||drag.id!==e.pointerId)return;
+ const a=angle(e),delta=2*(wrap(a-drag.a+180,360)-180);
+ const speed=Math.abs(delta)/Math.max(1,e.timeStamp-drag.stamp);
+ drag.value+=delta;
+ drag.a=a;
+ drag.stamp=e.timeStamp;
+ show(magneticTime(drag.value,speed),true,true);
+};
+dial.onlostpointercapture=()=>drag=null;
+window.onkeydown=e=>{if(!ready)return;if(e.code==='Space'){e.preventDefault();if(e.repeat)return;unlock();if(start!==null){stop();return}el('status').hidden=true;lastTickTime=-Infinity;startMelody();start=performance.now();frame(start)}
+ else if(e.key==='Escape'){stop();show(saved)}
+ else if(document.activeElement===dial&&['ArrowLeft','ArrowDown','ArrowUp','ArrowRight'].includes(e.key)){e.preventDefault();unlock();stop();show(time+(['ArrowRight','ArrowUp'].includes(e.key)?1:-1),true,true)}};
+el('cancel').onclick=()=>{if(ready){stop();show(saved)}};el('done').onclick=()=>{if(ready){unlock();stop();saved=time;tone(660,.12,.055)}};
+prepareLens();
+window.onresize=()=>{if(start===null)layout()};layout();el('ui').hidden=true;
+(async()=>{try{[backgrounds,words]=await Promise.all([sequence(24,i=>loadImage('meadow-backgrounds/'+String(i).padStart(2,'0')+'-00.png')),sequence(60,i=>loadImage('fonts-svg/EN/'+numberToSlug(i)+'.svg'))]);show(0);ready=true;el('status').hidden=true;el('ui').hidden=false}catch{el('status').textContent='Could not load local alarm assets.'}})();
+</script></html>
