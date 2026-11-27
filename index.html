@@ -3,6 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Alarm · Meadow</title>
+<link rel="icon" type="image/png" sizes="64x64" href="./favicon.png">
 <style>
 *{box-sizing:border-box}
 body{margin:0;isolation:isolate;background:#0a0a0c;color:white;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;overflow:hidden}
@@ -224,7 +225,7 @@ el('add-alarm').onclick=()=>{
  }
  requestAnimationFrame(animate);
 };
-const reelElapsed=now=>wrap((now-start)/1000,duration+leadIn+staticMusicTurn+counterExtra);
+const reelElapsed=now=>wrap(Math.max(0,now-start)/1000,duration+leadIn+staticMusicTurn+counterExtra);
 function showWheelHint(visible){
  el('wheel-hint').classList.toggle('visible',visible);
  const dial=el('dial');
@@ -731,7 +732,10 @@ window.onkeydown=e=>{if(!ready)return;
   panel.hidden=!panel.hidden;
   return;
  }
- if(e.code==='Space'&&!(e.target instanceof HTMLButtonElement)){e.preventDefault();if(!e.repeat)toggleReel()}
+ if((e.key==='Enter'||e.code==='Space')&&!(e.target instanceof HTMLButtonElement)){
+  e.preventDefault();
+  if(!e.repeat)toggleReel();
+ }
  else if(e.key==='Escape'){stop();show(saved)}
  else if(!el('done').disabled&&document.activeElement===dial&&['ArrowLeft','ArrowDown','ArrowUp','ArrowRight'].includes(e.key)){e.preventDefault();unlock();onboarding=false;stop();show(time+(['ArrowRight','ArrowUp'].includes(e.key)?1:-1),true,true)}};
 el('cancel').onclick=()=>{
