@@ -77,11 +77,19 @@ button:active{scale:.96}
 .alarm-name{font-size:22px;font-weight:650;line-height:1.18}
 .alarm-name small{font-size:11px;color:#a4aab2;font-weight:400}
 .alarm-switch{width:52px;height:31px;border-radius:30px;background:#929292;padding:4px;backdrop-filter:none;box-shadow:none;display:flex;align-items:center}
-.alarm-switch[aria-checked=true]{background:#04dc55;justify-content:flex-end}
-.alarm-switch::after{content:"";width:23px;height:23px;border-radius:50%;background:white}
+.alarm-row.is-off{height:88px;grid-template-rows:55px}
+.alarm-switch[aria-checked=true]{background:#04dc55}
+.alarm-switch::after{content:"";width:23px;height:23px;border-radius:50%;background:white;transition:transform .16s ease}
+.alarm-switch[aria-checked=true]::after{transform:translateX(21px)}
 .alarm-days{grid-column:1/-1;display:flex;gap:3px}
-.alarm-days span{flex:1;min-width:0;height:57px;border-radius:24px;background:#3c3c3c;color:#a9afb7;display:grid;place-items:center;font-size:12px}
-.alarm-days .active{background:white;color:#232323}
+.alarm-days[hidden]{display:none}
+.alarm-days button{flex:1;min-width:0;height:57px;border-radius:24px;background:#3c3c3c;color:#a9afb7;display:grid;place-items:center;font-size:12px;padding:0;box-shadow:none;backdrop-filter:none}
+.alarm-days button[aria-pressed=true]{background:white;color:#232323}
+.alarm-switch,.alarm-days button{transition:box-shadow .15s,filter .15s,scale .1s}
+@media(hover:hover){.alarm-switch:hover,.alarm-days button:hover{filter:brightness(1.16);box-shadow:inset 0 0 0 1px #ffffff55}}
+.alarm-switch:focus-visible,.alarm-days button:focus-visible{outline:2px solid #fff346;outline-offset:2px}
+.alarm-switch:active,.alarm-days button:active{scale:.91}
+@media(prefers-reduced-motion:reduce){.alarm-switch,.alarm-switch::after,.alarm-days button{transition:none}}
 </style>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <filter id="liquid-glass-lens" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
@@ -132,15 +140,40 @@ const alarms=[
  {time:1020,days:[],enabled:true}
 ];
 function renderAlarms(){
- const entries=addedAlarm===null?alarms:[{time:addedAlarm,days:[],enabled:true},...alarms];
- el('list-cards').replaceChildren(...entries.map(({time,days,enabled})=>{
+ const entries=addedAlarm===null?alarms:[addedAlarm,...alarms];
+ el('list-cards').replaceChildren(...entries.map(alarm=>{
+  const {time,days}=alarm;
   const h=Math.floor(time/60),m=time%60,angle=(time%720)*Math.PI/360;
   const card=document.createElement('article');card.className='alarm-row';
-  card.innerHTML='<div class="alarm-art"><i></i></div><div class="alarm-name">'+numberToSlug(h)+' <small>hrs</small><br>'+numberToSlug(m)+' <small>min</small></div><button class="alarm-switch" role="switch" aria-label="Будильник '+numberToSlug(h)+' '+numberToSlug(m)+'" aria-checked="'+enabled+'"></button><div class="alarm-days">'+['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((day,i)=>'<span class="'+(days.includes(i)?'active':'')+'">'+day+'</span>').join('')+'</div>';
+  card.innerHTML='<div class="alarm-art"><i></i></div><div class="alarm-name">'+numberToSlug(h)+' <small>hrs</small><br>'+numberToSlug(m)+' <small>min</small></div><button type="button" class="alarm-switch" role="switch" aria-label="Будильник '+numberToSlug(h)+' '+numberToSlug(m)+'"></button><div class="alarm-days" role="group" aria-label="Дни недели"></div>';
   card.firstElementChild.style.backgroundImage='url("'+backgrounds[h].src+'")';
   Object.assign(card.querySelector('i').style,{left:(50+49*Math.sin(angle))+'%',top:(50-49*Math.cos(angle))+'%'});
-  const control=card.querySelector('button');
-  control.onclick=()=>control.setAttribute('aria-checked',control.getAttribute('aria-checked')!=='true');
+  const control=card.querySelector('.alarm-switch'),dayRow=card.querySelector('.alarm-days');
+  function updateSwitch(){
+   control.setAttribute('aria-checked',alarm.enabled);
+   card.classList.toggle('is-off',!alarm.enabled);
+   dayRow.hidden=!alarm.enabled;
+  }
+  control.onclick=()=>{
+   alarm.enabled=!alarm.enabled;
+   updateSwitch();
+   unlock();tone(alarm.enabled?430:310,.055,.065);
+  };
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach((day,i)=>{
+   const button=document.createElement('button');
+   button.type='button';
+   button.textContent=day;
+   button.setAttribute('aria-pressed',days.includes(i));
+   button.onclick=()=>{
+    if(!alarm.enabled)return;
+    const selected=days.indexOf(i);
+    if(selected<0)days.push(i);else days.splice(selected,1);
+    button.setAttribute('aria-pressed',selected<0);
+    unlock();tone(selected<0?550:395,.047,.055);
+   };
+   dayRow.append(button);
+  });
+  updateSwitch();
   return card;
  }));
 }
@@ -155,8 +188,8 @@ function paintList(opacity,press=0){
  add.style.backgroundColor='rgba(255,255,255,'+(.2*press)+')';
 }
 function saveListAlarm(value){
- if(addedAlarm===value)return;
- addedAlarm=value;
+ if(addedAlarm?.time===value)return;
+ addedAlarm={time:value,days:[],enabled:true};
  renderAlarms();
 }
 el('add-alarm').onclick=()=>{
