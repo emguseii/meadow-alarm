@@ -128,8 +128,8 @@ const wrap=(n,m)=>(n%m+m)%m;
 const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
 let backgrounds,words,ready=false,time=0,previous=-1,saved=0,start=null,drag=null,audio,animationId=0;
 let lastTickTime=-Infinity;
-const duration=32.5;
-const listLead=1.35,hintUntil=2.15,introLength=listLead+5.1,staticMusicTurn=4;
+const duration=33.2;
+const hintUntil=2.15,introLength=5.1,staticMusicTurn=4;
 const counterStart=7.76,counterEnd=9.35,counterExtra=counterEnd-counterStart;
 // Cut the source immediately after its strong woodblock strike at 13.51 seconds.
 const percussionCut=13.59;
@@ -215,7 +215,8 @@ function showWheelHint(visible){
  if(visible)dial.setAttribute('aria-description','Rotate the circle to set the time');
  else dial.removeAttribute('aria-description');
 }
-const impactAt=23.5,vibrationAt=24.5,ringAt=26.65,autoSlide=29.85,returnAt=30.5;
+const impactAt=23.5,vibrationAt=24.5,vibrationEnd=26.65;
+const ringAt=vibrationEnd+.7,autoSlide=ringAt+3.2,returnAt=ringAt+3.85;
 const spinAt=2,wordHandoffAt=10.32;
 const musicTime=10*60;
 let percussionAt=5.5,detailAt=5.5,musicTravel=210;
@@ -491,7 +492,7 @@ function frame(now){
  if(t<lastFrameTime){directDone=false;returnStart=null;slidePosition=0;sliderDrag=null}
  const returning=returnStart??returnAt;
  const spin=cubicPhase(t,spinAt,wordHandoffAt);
- const entry=elapsed-listLead;
+ const entry=elapsed;
  const demoTime=alarmTime+(120-alarmTime)*cubicPhase(entry,hintUntil,hintUntil+1.3)+(alarmTime-120)*cubicPhase(entry,hintUntil+1.4,hintUntil+2.73);
  const turnProgress=clamp01((musicClock-percussionAt)/staticMusicTurn);
  const turnEnd=musicTravel+720;
@@ -511,7 +512,7 @@ function frame(now){
  const opening=cubicPhase(t,wideRevealAt,12.4);
  const reset=cubicPhase(t,returning,returning+1.3);
  const alarm=cubicPhase(t,ringAt,ringAt+1)*(1-reset);
- reveal('phone',t>=ringAt?0:leadIn?cubicPhase(elapsed,listLead,listLead+.23):1);
+ reveal('phone',t>=ringAt?0:1);
  const dissipation=cubicPhase(t,ringAt,ringAt+1);
  const phoneFade=cubicPhase(t,wideRevealAt,wideRevealAt+.43)*(1-reset);
  el('phone').style.setProperty('--outline',1-phoneFade);
@@ -530,10 +531,7 @@ function frame(now){
   saveListAlarm(reelAnchor);
   if(!directDone)tone(660,.12,.055);
  }
- const listPress=cubicPhase(elapsed,.68,.8)*(1-cubicPhase(elapsed,.8,1.02));
- const listIntro=leadIn?1-cubicPhase(elapsed,1.02,listLead):0;
- paintList(Math.max(listIntro,reset),listPress);
- if(leadIn&&lastFrameTime<.8-leadIn&&elapsed>=.8&&elapsed<1)tone(530,.06,.07);
+ paintList(reset);
  const scenicFade=(t>=wideRevealAt?1:0)*(1-dissipation);
  reveal('wide-scene',widePhoto?scenicFade:0);
  const vibration=t-vibrationAt;
@@ -581,7 +579,7 @@ function frame(now){
  cue(tracks[0],musicClock,percussionAt,percussionAt+percussionCut,.73*cubicPhase(musicClock,percussionAt,percussionAt+.25));
  cue(tracks[1],t,12,impactAt,.63*cubicPhase(t,12,17));
  cue(tracks[4],t,12,impactAt,.34*cubicPhase(t,12,13.5),1.1);
- cue(tracks[2],t,vibrationAt,ringAt,.34);
+ cue(tracks[2],t,vibrationAt,vibrationEnd,.34);
  cue(tracks[3],t,ringAt,returning+.3,.72*(1-cubicPhase(t,returning,returning+.3)));
  lastFrameTime=t;
  animationId=requestAnimationFrame(frame);
